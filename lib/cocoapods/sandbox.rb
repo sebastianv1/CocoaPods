@@ -130,6 +130,10 @@ module Pod
       root + 'Pods.xcodeproj'
     end
 
+    def target_project_path(target)
+      root + "#{target.label}.xcodeproj"
+    end
+
     # Returns the path for the directory where the support files of
     # a target are stored.
     #

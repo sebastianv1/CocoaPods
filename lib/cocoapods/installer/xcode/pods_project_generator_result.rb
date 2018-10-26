@@ -7,7 +7,9 @@ module Pod
         class PodsProjectGeneratorResult
           # @return [Project] project
           #
-          attr_reader :project
+          attr_reader :project_target_hash
+
+          attr_reader :container_project
 
           # @return [InstallationResults] target installation results
           #
@@ -18,8 +20,9 @@ module Pod
           # @param [Project] project @see #project
           # @param [InstallationResults] target_installation_results @see #target_installation_results
           #
-          def initialize(project, target_installation_results)
-            @project = project
+          def initialize(container_project, project_target_hash, target_installation_results)
+            @container_project = container_project
+            @project_target_hash = project_target_hash
             @target_installation_results = target_installation_results
           end
         end

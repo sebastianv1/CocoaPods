@@ -39,7 +39,7 @@ module Pod
                 native_target = add_placeholder_target
                 resource_bundle_targets = add_resources_bundle_targets(file_accessors).values.flatten
                 create_xcconfig_file(native_target, resource_bundle_targets)
-                return TargetInstallationResult.new(target, native_target, resource_bundle_targets)
+                return TargetInstallationResult.new(target, native_target, @project, resource_bundle_targets)
               end
 
               native_target = add_target
@@ -103,7 +103,7 @@ module Pod
               end
               create_dummy_source(native_target)
               clean_support_files_temp_dir
-              TargetInstallationResult.new(target, native_target, resource_bundle_targets, test_native_targets,
+              TargetInstallationResult.new(target, native_target, @project, resource_bundle_targets, test_native_targets,
                                            test_resource_bundle_targets, test_app_host_targets)
             end
           end

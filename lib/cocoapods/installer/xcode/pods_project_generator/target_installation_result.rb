@@ -38,6 +38,8 @@ module Pod
           #
           attr_reader :test_app_host_targets
 
+          attr_reader :project
+
           # Initialize a new instance
           #
           # @param [Target] target @see #target
@@ -47,10 +49,11 @@ module Pod
           # @param [Hash{String=>Array<PBXNativeTarget>}] test_resource_bundle_targets @see #test_resource_bundle_targets
           # @param [Array<PBXNativeTarget>] test_app_host_targets @see #test_app_host_targets
           #
-          def initialize(target, native_target, resource_bundle_targets = [], test_native_targets = [],
+          def initialize(target, native_target, project, resource_bundle_targets = [], test_native_targets = [],
                          test_resource_bundle_targets = {}, test_app_host_targets = [])
             @target = target
             @native_target = native_target
+            @project = project
             @resource_bundle_targets = resource_bundle_targets
             @test_native_targets = test_native_targets
             @test_resource_bundle_targets = test_resource_bundle_targets

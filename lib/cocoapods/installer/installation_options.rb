@@ -110,6 +110,7 @@ module Pod
       option :share_schemes_for_development_pods, false
       option :disable_input_output_paths, false
       option :preserve_pod_file_structure, false
+      option :generate_multi_proj, true
 
       module Mixin
         module ClassMethods
