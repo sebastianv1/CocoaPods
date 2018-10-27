@@ -207,8 +207,9 @@ module Pod
     def generate_pods_project(generator = create_generator)
       UI.section 'Generating Pods project' do
         pod_project_generation_result = generator.generate!
-        @target_installation_results = pod_project_generation_result.target_installation_results
+        @sandbox.project = pod_project_generation_result.container_project
         @pods_project = pod_project_generation_result.container_project
+        @target_installation_results = pod_project_generation_result.target_installation_results
         run_podfile_post_install_hooks
         generator.write(pod_project_generation_result.container_project, target_installation_results.pod_target_installation_results)
         pod_project_generation_result.project_target_hash.each do |project, target_install_results|

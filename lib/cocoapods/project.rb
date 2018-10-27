@@ -21,6 +21,8 @@ module Pod
     #
     attr_reader :development_pods
 
+    attr_reader :dependencies
+
     # Initialize a new instance
     #
     # @param  [Pathname, String] path @see #path
@@ -37,6 +39,7 @@ module Pod
       @variant_groups_by_path_and_name = {}
       @pods = new_group('Pods')
       @development_pods = new_group('Development Pods')
+      @dependencies = new_group('Dependencies')
       self.symroot = LEGACY_BUILD_ROOT
     end
 

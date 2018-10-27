@@ -73,7 +73,7 @@ module Pod
         def generate_single_pods_project(pod_targets, aggregate_targets)
           project_object_version = self.class.project_object_version(aggregate_targets)
           project = create_project(sandbox.project_path, project_object_version)
-          prepare(project, pod_targets, aggregate_targets)
+          prepare(project, pod_targets, aggregate_targets, config.podfile_path)
           @sandbox.project = project
 
           install_pod_target_file_references(project, pod_targets)
@@ -84,24 +84,24 @@ module Pod
 
           integrate_targets(target_installation_results.pod_target_installation_results)
           wire_target_dependencies(target_installation_results, nil)
-          PodsProjectGeneratorResult.new(project, { project => pod_target_installation_results }, target_installation_results)
+          PodsProjectGeneratorResult.new(project, { }, target_installation_results)
         end
 
         def generate_multi_pods_project(pod_targets, aggregate_targets)
           project_object_version = self.class.project_object_version(aggregate_targets)
 
           container_project = create_project(sandbox.project_path, project_object_version)
+          prepare(container_project, [], aggregate_targets, config.podfile_path)
+          @sandbox.project = container_project
+
           pod_target_project_hash = {}
           pod_targets.each do |pod_target|
             target_proj = create_project(sandbox.target_project_path(pod_target), project_object_version)
-            prepare(target_proj, [pod_target], aggregate_targets)
+            prepare(target_proj, [pod_target], aggregate_targets, nil)
             target_proj.save
             container_project.add_file_reference(target_proj.path, container_project.main_group)
             pod_target_project_hash[pod_target] = target_proj
           end
-
-          prepare(container_project, pod_targets, aggregate_targets)
-          @sandbox.project = container_project
 
           pod_target_project_hash.each do |pod_target, project|
             install_pod_target_file_references(project, [pod_target])
@@ -125,7 +125,9 @@ module Pod
         def write(project, pod_target_installation_results)
           UI.message "- Writing Xcode project file to #{UI.path sandbox.project_path}" do
             project.pods.remove_from_project if project.pods.empty?
+            project.support_files_group.remove_from_project if project.support_files_group.empty?
             project.development_pods.remove_from_project if project.development_pods.empty?
+            project.dependencies.remove_from_project if project.dependencies.empty?
             project.sort(:groups_position => :below)
             if installation_options.deterministic_uuids?
               UI.message('- Generating deterministic UUIDs') { project.predictabilize_uuids }
@@ -184,7 +186,7 @@ module Pod
         #
         # @todo   Clean and modify the project if it exists.
         #
-        def prepare(project, pod_targets, aggregate_targets)
+        def prepare(project, pod_targets, aggregate_targets, podfile_path)
           UI.message '- Creating Pods project' do
             analysis_result.all_user_build_configurations.each do |name, type|
               project.add_build_configuration(name, type)
@@ -200,8 +202,8 @@ module Pod
               project.add_pod_group(pod_name, path, local, was_absolute)
             end
 
-            if config.podfile_path
-              project.add_podfile(config.podfile_path)
+            if podfile_path
+              project.add_podfile(podfile_path)
             end
 
 
@@ -255,34 +257,6 @@ module Pod
           end]
 
           AggregateTargetInstallationResults.new(aggregate_target_installation_results)
-        end
-
-        def install_targets(project)
-          UI.message '- Installing targets' do
-            umbrella_headers_by_dir = pod_targets.map do |pod_target|
-              next unless pod_target.should_build? && pod_target.defines_module?
-              pod_target.umbrella_header_path
-            end.compact.group_by(&:dirname)
-
-            pod_target_installation_results = Hash[pod_targets.sort_by(&:name).map do |pod_target|
-              umbrella_headers_in_header_dir = umbrella_headers_by_dir[pod_target.module_map_path.dirname]
-              target_installer = PodTargetInstaller.new(sandbox, project, pod_target, umbrella_headers_in_header_dir)
-              [pod_target.name, target_installer.install!]
-            end]
-
-            # Hook up system framework dependencies for the pod targets that were just installed.
-            pod_target_installation_result_values = pod_target_installation_results.values.compact
-            unless pod_target_installation_result_values.empty?
-              add_system_framework_dependencies(pod_target_installation_result_values)
-            end
-
-            aggregate_target_installation_results = Hash[aggregate_targets.sort_by(&:name).map do |target|
-              target_installer = AggregateTargetInstaller.new(sandbox, project, target)
-              [target.name, target_installer.install!]
-            end]
-
-            InstallationResults.new(pod_target_installation_results, aggregate_target_installation_results)
-          end
         end
 
         def integrate_targets(pod_target_installation_results)
@@ -365,7 +339,7 @@ module Pod
             dependent_targets.each do |dependent_target|
               if pod_target_project_hash
                 dependent_project = pod_target_project_hash[dependent_target]
-                project.add_file_reference(dependent_project.path, project.main_group)
+                project.add_file_reference(dependent_project.path, project.dependencies)
               end
               native_target.add_dependency(pod_target_installation_results_hash[dependent_target.name].native_target)
               add_framework_file_reference_to_native_target(native_target, pod_target, dependent_target, frameworks_group)
@@ -384,7 +358,7 @@ module Pod
                   end
                   if pod_target_project_hash
                     dependent_project = pod_target_project_hash[test_dependent_target]
-                    project.add_file_reference(dependent_project.path, project.main_group) unless dependent_project == project
+                    project.add_file_reference(dependent_project.path, project.dependencies) unless dependent_project == project
                   end
                   test_native_target.add_dependency(dependency_installation_result.native_target)
                   add_framework_file_reference_to_native_target(test_native_target, pod_target, test_dependent_target, frameworks_group)
