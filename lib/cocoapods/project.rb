@@ -31,7 +31,7 @@ module Pod
     # @param  [Int] object_version
     #         Object version to use for serialization, defaults to Xcode 3.2 compatible.
     #
-    def initialize(path, skip_initialization = false,
+    def initialize(path, target_pod_project = false, skip_initialization = false,
         object_version = Xcodeproj::Constants::DEFAULT_OBJECT_VERSION)
       super(path, skip_initialization, object_version)
       @support_files_group = new_group('Targets Support Files')
@@ -40,6 +40,8 @@ module Pod
       @pods = new_group('Pods')
       @development_pods = new_group('Development Pods')
       @dependencies = new_group('Dependencies')
+      @target_pod_project = target_pod_project
+      @subproject_references = []
       self.symroot = LEGACY_BUILD_ROOT
     end
 
@@ -104,7 +106,12 @@ module Pod
     def add_pod_group(pod_name, path, development = false, absolute = false)
       raise '[BUG]' if pod_group(pod_name)
 
-      parent_group = development ? development_pods : pods
+      parent_group =
+        if @target_pod_project
+          main_group
+        else
+          development ? development_pods : pods
+        end
       source_tree = absolute ? :absolute : :group
 
       group = parent_group.new_group(pod_name, path, source_tree)
@@ -114,7 +121,11 @@ module Pod
     # @return [Array<PBXGroup>] Returns all the group of the Pods.
     #
     def pod_groups
-      pods.children.objects + development_pods.children.objects
+      if @target_pod_project
+        main_group.children.objects
+      else
+        pods.children.objects + development_pods.children.objects
+      end
     end
 
     # Returns the group for the Pod with the given name.
@@ -213,6 +224,16 @@ module Pod
       group = group_for_path_in_group(file_path_name, group, reflect_file_system_structure, base_path)
       ref = group.new_file(file_path_name.realpath)
       @refs_by_absolute_path[file_path_name.to_s] = ref
+    end
+
+    def add_pod_target_subproject(project, group)
+      @subproject_references << project
+      add_file_reference(project.path, group)
+    end
+
+    def all_targets
+      subproject_targets = (@subproject_references.map { |p| p.targets}).flatten
+      targets + subproject_targets
     end
 
     # Returns the file reference for the given absolute path.

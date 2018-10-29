@@ -96,10 +96,11 @@ module Pod
 
           pod_target_project_hash = {}
           pod_targets.each do |pod_target|
-            target_proj = create_project(sandbox.target_project_path(pod_target), project_object_version)
+            target_proj = create_project(sandbox.target_project_path(pod_target), project_object_version, true)
             prepare(target_proj, [pod_target], aggregate_targets, nil)
             target_proj.save
-            container_project.add_file_reference(target_proj.path, container_project.main_group)
+            container_project.add_pod_target_subproject(target_proj, container_project.main_group)
+            #container_project.add_file_reference(target_proj.path, container_project.main_group)
             pod_target_project_hash[pod_target] = target_proj
           end
 
@@ -172,11 +173,11 @@ module Pod
         PodTargetInstallationResults = Struct.new(:results)
         AggregateTargetInstallationResults = Struct.new(:results)
 
-        def create_project(path, object_version)
+        def create_project(path, object_version, target_pod_project = false)
           if object_version
-            Pod::Project.new(path, false, object_version)
+            Pod::Project.new(path, target_pod_project, false, object_version)
           else
-            Pod::Project.new(path)
+            Pod::Project.new(path, target_pod_project)
           end
         end
 
@@ -339,7 +340,8 @@ module Pod
             dependent_targets.each do |dependent_target|
               if pod_target_project_hash
                 dependent_project = pod_target_project_hash[dependent_target]
-                project.add_file_reference(dependent_project.path, project.dependencies)
+                project.add_pod_target_subproject(dependent_project, project.dependencies)
+                #project.add_file_reference(dependent_project.path, project.dependencies)
               end
               native_target.add_dependency(pod_target_installation_results_hash[dependent_target.name].native_target)
               add_framework_file_reference_to_native_target(native_target, pod_target, dependent_target, frameworks_group)
@@ -358,7 +360,8 @@ module Pod
                   end
                   if pod_target_project_hash
                     dependent_project = pod_target_project_hash[test_dependent_target]
-                    project.add_file_reference(dependent_project.path, project.dependencies) unless dependent_project == project
+                    project.add_pod_target_subproject(dependent_project, project.dependencies)
+                    #project.add_file_reference(dependent_project.path, project.dependencies) unless dependent_project == project
                   end
                   test_native_target.add_dependency(dependency_installation_result.native_target)
                   add_framework_file_reference_to_native_target(test_native_target, pod_target, test_dependent_target, frameworks_group)
