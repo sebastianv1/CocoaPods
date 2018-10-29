@@ -12,6 +12,7 @@ module Pod
         require 'cocoapods/installer/xcode/pods_project_generator/file_references_installer'
         require 'cocoapods/installer/xcode/pods_project_generator/aggregate_target_installer'
         require 'cocoapods/installer/xcode/pods_project_generator_result'
+        require 'cocoapods/installer/xcode/pods_project_generator/project_generator'
 
         # @return [Sandbox] The sandbox where the Pods should be installed.
         #
@@ -72,8 +73,17 @@ module Pod
 
         def generate_single_pods_project(pod_targets, aggregate_targets)
           project_object_version = self.class.project_object_version(aggregate_targets)
-          project = create_project(sandbox.project_path, project_object_version)
-          prepare(project, pod_targets, aggregate_targets, config.podfile_path)
+          build_configurations = analysis_result.all_user_build_configurations
+          platforms = aggregate_targets.map(&:platform)
+          project_generator = ProjectGenerator.new(sandbox,
+                                                   sandbox.project_path,
+                                                   pod_targets,
+                                                   build_configurations,
+                                                   platforms,
+                                                   false,
+                                                   project_object_version,
+                                                   config.podfile_path)
+          project = project_generator.generate!
           @sandbox.project = project
 
           install_pod_target_file_references(project, pod_targets)
@@ -89,18 +99,31 @@ module Pod
 
         def generate_multi_pods_project(pod_targets, aggregate_targets)
           project_object_version = self.class.project_object_version(aggregate_targets)
-
-          container_project = create_project(sandbox.project_path, project_object_version)
-          prepare(container_project, [], aggregate_targets, config.podfile_path)
+          build_configurations = analysis_result.all_user_build_configurations
+          platforms = aggregate_targets.map(&:platform)
+          project_generator = ProjectGenerator.new(sandbox,
+                                                   sandbox.project_path,
+                                                   [],
+                                                   build_configurations,
+                                                   platforms,
+                                                   false,
+                                                   project_object_version,
+                                                   config.podfile_path)
+          container_project = project_generator.generate!
           @sandbox.project = container_project
 
           pod_target_project_hash = {}
           pod_targets.each do |pod_target|
-            target_proj = create_project(sandbox.target_project_path(pod_target), project_object_version, true)
-            prepare(target_proj, [pod_target], aggregate_targets, nil)
+            target_project_generator = ProjectGenerator.new(sandbox,
+                                                            sandbox.target_project_path(pod_target),
+                                                            [pod_target],
+                                                            build_configurations,
+                                                            platforms,
+                                                            true,
+                                                            project_object_version)
+            target_proj = target_project_generator.generate!
             target_proj.save
             container_project.add_pod_target_subproject(target_proj, container_project.main_group)
-            #container_project.add_file_reference(target_proj.path, container_project.main_group)
             pod_target_project_hash[pod_target] = target_proj
           end
 
@@ -172,58 +195,6 @@ module Pod
         InstallationResults = Struct.new(:pod_target_installation_results, :aggregate_target_installation_results)
         PodTargetInstallationResults = Struct.new(:results)
         AggregateTargetInstallationResults = Struct.new(:results)
-
-        def create_project(path, object_version, target_pod_project = false)
-          if object_version
-            Pod::Project.new(path, target_pod_project, false, object_version)
-          else
-            Pod::Project.new(path, target_pod_project)
-          end
-        end
-
-        # Creates the Pods project from scratch if it doesn't exists.
-        #
-        # @return [Project]
-        #
-        # @todo   Clean and modify the project if it exists.
-        #
-        def prepare(project, pod_targets, aggregate_targets, podfile_path)
-          UI.message '- Creating Pods project' do
-            analysis_result.all_user_build_configurations.each do |name, type|
-              project.add_build_configuration(name, type)
-            end
-            # Reset symroot just in case the user has added a new build configuration other than 'Debug' or 'Release'.
-            project.symroot = Pod::Project::LEGACY_BUILD_ROOT
-
-            pod_names = pod_targets.map(&:pod_name).uniq
-            pod_names.each do |pod_name|
-              local = sandbox.local?(pod_name)
-              path = sandbox.pod_dir(pod_name)
-              was_absolute = sandbox.local_path_was_absolute?(pod_name)
-              project.add_pod_group(pod_name, path, local, was_absolute)
-            end
-
-            if podfile_path
-              project.add_podfile(podfile_path)
-            end
-
-
-            platforms = aggregate_targets.map(&:platform)
-            osx_deployment_target = platforms.select { |p| p.name == :osx }.map(&:deployment_target).min
-            ios_deployment_target = platforms.select { |p| p.name == :ios }.map(&:deployment_target).min
-            watchos_deployment_target = platforms.select { |p| p.name == :watchos }.map(&:deployment_target).min
-            tvos_deployment_target = platforms.select { |p| p.name == :tvos }.map(&:deployment_target).min
-            project.build_configurations.each do |build_configuration|
-              build_configuration.build_settings['MACOSX_DEPLOYMENT_TARGET'] = osx_deployment_target.to_s if osx_deployment_target
-              build_configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = ios_deployment_target.to_s if ios_deployment_target
-              build_configuration.build_settings['WATCHOS_DEPLOYMENT_TARGET'] = watchos_deployment_target.to_s if watchos_deployment_target
-              build_configuration.build_settings['TVOS_DEPLOYMENT_TARGET'] = tvos_deployment_target.to_s if tvos_deployment_target
-              build_configuration.build_settings['STRIP_INSTALLED_PRODUCT'] = 'NO'
-              build_configuration.build_settings['CLANG_ENABLE_OBJC_ARC'] = 'YES'
-            end
-            project
-          end
-        end
 
         def install_pod_target_file_references(project, pods_targets)
           installer = FileReferencesInstaller.new(sandbox, pods_targets, project, installation_options.preserve_pod_file_structure)
@@ -341,7 +312,6 @@ module Pod
               if pod_target_project_hash
                 dependent_project = pod_target_project_hash[dependent_target]
                 project.add_pod_target_subproject(dependent_project, project.dependencies)
-                #project.add_file_reference(dependent_project.path, project.dependencies)
               end
               native_target.add_dependency(pod_target_installation_results_hash[dependent_target.name].native_target)
               add_framework_file_reference_to_native_target(native_target, pod_target, dependent_target, frameworks_group)
@@ -361,7 +331,6 @@ module Pod
                   if pod_target_project_hash
                     dependent_project = pod_target_project_hash[test_dependent_target]
                     project.add_pod_target_subproject(dependent_project, project.dependencies)
-                    #project.add_file_reference(dependent_project.path, project.dependencies) unless dependent_project == project
                   end
                   test_native_target.add_dependency(dependency_installation_result.native_target)
                   add_framework_file_reference_to_native_target(test_native_target, pod_target, test_dependent_target, frameworks_group)
@@ -386,15 +355,6 @@ module Pod
             raise Informative, 'Unable to handle share_schemes_for_development_pods ' \
               "being set to #{dev_pods_to_share.inspect} -- please set it to true, " \
               'false, or an array of pods to share schemes for.'
-          end
-        end
-
-        # @return [Array<Library>] The targets of the development pods generated by
-        #         the installation process.
-        #
-        def development_pod_targets
-          pod_targets.select do |pod_target|
-            sandbox.local?(pod_target.pod_name)
           end
         end
 
