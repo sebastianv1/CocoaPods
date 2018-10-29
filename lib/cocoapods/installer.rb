@@ -198,22 +198,28 @@ module Pod
 
     private
 
-    def create_generator
-      Xcode::PodsProjectGenerator.new(sandbox, aggregate_targets, pod_targets, analysis_result, installation_options, config)
+    def create_generator(installation_options)
+      if installation_options.generate_multi_proj
+        Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets, pod_targets, analysis_result, installation_options, config)
+      else
+        Xcode::SinglePodsProjectGenerator.new(sandbox, aggregate_targets, pod_targets, analysis_result, installation_options, config)
+      end
     end
 
     # Generate the 'Pods/Pods.xcodeproj' project.
     #
-    def generate_pods_project(generator = create_generator)
+    def generate_pods_project(generator = create_generator(installation_options))
       UI.section 'Generating Pods project' do
         pod_project_generation_result = generator.generate!
         @sandbox.project = pod_project_generation_result.container_project
         @pods_project = pod_project_generation_result.container_project
         @target_installation_results = pod_project_generation_result.target_installation_results
         run_podfile_post_install_hooks
-        generator.write(pod_project_generation_result.container_project, target_installation_results.pod_target_installation_results)
+        project_writer = Xcode::PodsProjectWriter.new(sandbox, @pods_project, target_installation_results.pod_target_installation_results, installation_options)
+        project_writer.write!
         pod_project_generation_result.project_target_hash.each do |project, target_install_results|
-          generator.write(project, target_install_results)
+          subproject_writer = Xcode::PodsProjectWriter.new(sandbox, project, target_install_results, installation_options)
+          subproject_writer.write!
           pod_targets = target_install_results.map { |_,result| result.target }
           generator.share_development_pod_schemes(project, development_pod_targets(pod_targets))
         end
