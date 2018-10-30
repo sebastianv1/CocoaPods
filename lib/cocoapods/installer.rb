@@ -211,8 +211,8 @@ module Pod
     def generate_pods_project(generator = create_generator(installation_options))
       UI.section 'Generating Pods project' do
         pod_project_generation_result = generator.generate!
-        @sandbox.project = pod_project_generation_result.container_project
-        @pods_project = pod_project_generation_result.container_project
+        @sandbox.project = pod_project_generation_result.project
+        @pods_project = pod_project_generation_result.project
         @target_installation_results = pod_project_generation_result.target_installation_results
         run_podfile_post_install_hooks
         project_writer = Xcode::PodsProjectWriter.new(sandbox, @pods_project, target_installation_results.pod_target_installation_results, installation_options)

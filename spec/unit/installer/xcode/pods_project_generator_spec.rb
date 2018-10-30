@@ -80,7 +80,7 @@ module Pod
 
             @installation_options = Pod::Installer::InstallationOptions.new
 
-            @generator = PodsProjectGenerator.new(config.sandbox, aggregate_targets, pod_targets, @analysis_result,
+            @generator = SinglePodsProjectGenerator.new(config.sandbox, aggregate_targets, pod_targets, @analysis_result,
                                                   @installation_options, config)
           end
 
@@ -388,7 +388,7 @@ module Pod
 
             target.stubs(:user_targets).returns([user_target])
 
-            @generator = PodsProjectGenerator.new(config.sandbox, [target], [],
+            @generator = SinglePodsProjectGenerator.new(config.sandbox, [target], [],
                                                   @analysis_result, @installation_options, config)
             pod_generator_result = @generator.generate!
             pod_generator_result.project.object_version.should == '1'
@@ -401,7 +401,8 @@ module Pod
               pod_generator_result = @generator.generate!
               pod_generator_result.project.main_group.expects(:sort)
               Xcodeproj::Project.any_instance.stubs(:recreate_user_schemes)
-              @generator.write(pod_generator_result.project, pod_generator_result.target_installation_results)
+              PodsProjectGenerator::TargetInstallationResult.any_instance.stubs(:native_target)
+              PodsProjectWriter.new(config.sandbox, pod_generator_result.project, pod_generator_result.target_installation_results, @installation_options).write!
             end
 
             it 'saves the project to the given path' do
@@ -409,14 +410,15 @@ module Pod
               Xcodeproj::Project.any_instance.stubs(:recreate_user_schemes)
               temporary_directory + 'Pods/Pods.xcodeproj'
               pod_generator_result.project.expects(:save)
-              @generator.write(pod_generator_result.project, pod_generator_result.target_installation_results)
+              PodsProjectWriter.any_instance.stubs(:write!)
+              PodsProjectWriter.new(config.sandbox, pod_generator_result.project, pod_generator_result.target_installation_results, @installation_options).write!
             end
           end
 
           describe '#share_development_pod_schemes' do
             it 'does not share by default' do
               Xcodeproj::XCScheme.expects(:share_scheme).never
-              @generator.share_development_pod_schemes(nil)
+              @generator.share_development_pod_schemes(nil, [])
             end
 
             it 'can share all schemes' do
