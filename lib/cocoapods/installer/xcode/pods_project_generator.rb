@@ -219,7 +219,7 @@ module Pod
                   end
                   if pod_target_project_hash
                     dependent_project = pod_target_project_hash[test_dependent_target]
-                    project.add_pod_target_subproject(dependent_project, project.dependencies)
+                    project.add_pod_target_subproject(dependent_project, project.dependencies) unless dependent_project == project
                   end
                   test_native_target.add_dependency(dependency_installation_result.native_target)
                   add_framework_file_reference_to_native_target(test_native_target, pod_target, test_dependent_target, frameworks_group)

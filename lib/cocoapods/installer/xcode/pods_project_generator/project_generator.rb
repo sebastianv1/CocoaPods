@@ -20,11 +20,8 @@ module Pod
         end
 
         def create_project(path, object_version, pod_target_subproject = false)
-          if object_version
-            Pod::Project.new(path, pod_target_subproject, false, object_version)
-          else
-            Pod::Project.new(path, pod_target_subproject)
-          end
+          object_version ||= Xcodeproj::Constants::DEFAULT_OBJECT_VERSION
+          Pod::Project.new(path, false, object_version, pod_target_subproject)
         end
 
         def prepare(sandbox, project, pod_targets, build_configurations, platforms, podfile_path)
