@@ -3,7 +3,7 @@
 
 **date:** 10/31/2018
 
-##Summary
+## Summary
 A growing pain for developers using CocoaPods in a large codebase (>300 dependencies) is the wall clock time from invoking `pod install` to coding inside of Xcode. A large portion of this time is spent generating the `Pods.xcodeproj` for every `pod install` invocation and waiting for Xcode to parse the contents of the `Pods.xcodeproj/project.pbxproj` file before a developer can begin interacting with their workspace.
 
 Instead of generating and integrating all targets for every pod installation, we can optimize this by implementing an incremental pod installation that would only generate and integrate pod targets that have changed since the initial setup. Implementing incremental pod installation necessitates two changes: The first is breaking up the monolithic `Pods.xcodeproj` into subprojects for each pod target (and its test targets) as a prerequesite for implementing the incremental portion that would regenerate the individual Xcode projects for only the pod targets that have changed.
