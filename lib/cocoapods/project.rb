@@ -42,7 +42,7 @@ module Pod
       @development_pods = new_group('Development Pods')
       @dependencies = new_group('Dependencies')
       @pod_target_subproject = pod_target_subproject
-      @subproject_references = []
+      @subproject_targets = []
       self.symroot = LEGACY_BUILD_ROOT
     end
 
@@ -227,14 +227,18 @@ module Pod
       @refs_by_absolute_path[file_path_name.to_s] = ref
     end
 
+    def add_subproject_reference(path, group, targets)
+      add_file_reference(path, group)
+      @subproject_targets + targets
+    end
+
     def add_pod_target_subproject(project, group)
       @subproject_references << project
       add_file_reference(project.path, group)
     end
 
     def all_targets
-      subproject_targets = (@subproject_references.map { |p| p.targets}).flatten
-      targets + subproject_targets
+      targets + @subproject_targets
     end
 
     # Returns the file reference for the given absolute path.
