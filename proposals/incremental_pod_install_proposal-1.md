@@ -67,42 +67,28 @@ def write!
 ```
 
 ###### Project
-** pod_target_subproject **
+**pod_target_subproject**
+
 By breaking out pod targets into their projects, we will add a new parameter to the `Pod::Project` initializer `pod_target_subproject` that defaults to false.
 The `pod_target_subproject` ivar is used to switch on behavior in the method `add_pod_group` since we want to put pod groups in the main group instead of `Development Pods` or `Pods` group for subprojects. It is also used in `pod_groups` in order to return the parent group (main group) used to find pod groups.
 
 **dependencies**
+
 `Pod::Project` will also include a new ivar `dependencies` to represent the `Dependencies` group used by pod target subprojects. If this group is empty, it will also be a group cleaned up by the `PodsProjectWriter`.
 
 ###### Sandbox
 The generated pod target projects will also go into the sandbox directory, so a new helper method will be added to `Pod::Sandbox` for the paths to these pod target projects.
 ```
 def target_project_path(target)
-      root + "#{target.label}.xcodeproj"
+  root + "#{target.label}.xcodeproj"
 end
 ```
-
-
-- Primilary changes to pods_project_generator.rb
-	- Creating two new project generators
-	 	- Multi and Single that inherit from Pods Project Generator that have variant generate! behavior, but return the same `PodsProjectGenerationResult`.
-	 		- Expand the Pods Project Generation Result to include a `project_target_hash` with a mappings of pod targets to projects. This will be empty for SinglePodsProjectGeneration.
-	 		- `project_target_hash` is a new hash map that will be empty for the `SinglePodsProjectGenerator` and populated with mapping from `pod_targets` to `Project` objects for `MultiXcodeProjectGenerator` to be used for installing and wiring targets correctly.
-	 		- We can also extract logic out of `PodsProjectGenerator` into their own objects so that the two different generators and rely less on inheritence to share similar behavior.
-	 			- write! goes into a new object `PodsProjectWriter`
-	 			- project generation can go into a new `ProjectGenerator` object.
-	- `Project` changes:
-		- Add a new group called `Dependencies` that will be removed in cleanup if empty.
-		- New property `pod_target_subproject` boolean to indicate whether this project is a pod target subproject.
-			- For subprojects, we don't want to put nest them inside the `Pods` or `Development Pods` group, we can simply put it inside the `main_group` since each of the projects will uniquely identify itself. `pod_target_subproject` is used by `add_pod_group` and the sister function `pod_groups` in order to help find a group by pod.
-		- New array `subproject_references`. 
-			- The @pods_project.targets installer API breaks with nested subprojects since it would only return the Aggregate Targets. Adding a new public property `all_targets` that will take the nested subprojects and map over their targets such that `all_targets` on the container project will return all targets for the installer.
-
 
 ### Backwards Compatibility
 The `pods_project` property on `Pod:Installer` now points to the container project, so any assumptions made about the state of the generated project may break. For instance, `pods_project.targets` will now only returns a list of aggregate targets instead of aggregate and pod targets. We can add certain helper methods like `all_targets` to `Pod::Project` in order to stay backwards compatible with post install hooks. Certain projects may have to fix their assumptions before turning on this installation option.
 
 ### Phase 2: Incremental Pod Installation
 **Coming soon**
+
 Design doc for phase 2 of this project will be published soon.
 
