@@ -4,12 +4,12 @@
 **date:** 10/31/2018
 
 ## Summary
-A growing pain for developers using CocoaPods in a large codebase (>300 dependencies) is the wall clock time from invoking `pod install` to coding inside of Xcode. A large portion of this time is spent generating the `Pods.xcodeproj` for every `pod install` invocation and waiting for Xcode to parse the contents of the `Pods.xcodeproj/project.pbxproj` file before a developer can begin interacting with their workspace.
+A growing pain for developers using CocoaPods in a large codebase (>300 dependencies) is the wall clock time from invoking `pod install` to coding inside Xcode. A large portion of this time is spent generating the `Pods.xcodeproj` for every pod installation and waiting for Xcode to parse the contents of the `Pods.xcodeproj/project.pbxproj` file before a developer can begin interacting with their workspace.
 
-Instead of generating and integrating all targets for every pod installation, we can optimize this by implementing an incremental pod installation that would only generate and integrate pod targets that have changed since the initial setup. Implementing incremental pod installation necessitates two changes: The first is breaking up the monolithic `Pods.xcodeproj` into subprojects for each pod target (and its test targets) as a prerequesite for implementing the incremental portion that would regenerate the individual Xcode projects for only the pod targets that have changed.
+Instead of generating and integrating all targets for every pod installation, we can optimize this with an incremental pod installation that would only generate and integrate pod targets that have changed since the initial setup. Implementing incremental pod installation necessitates two changes: The first is breaking up the monolithic `Pods.xcodeproj` into subprojects for each pod target (and its test targets) as a prerequesite for the second change, implementing the logic to only regenerate the subprojects that have changed since the last installation.
 
 ## Motivation
-Productivity slows singificantly in large CocoaPods environemnts with many active contributors since invoking `pod install` is often required for every merge, rebase, or branch switch (in addition to the required installation for every new file, module, header etc.). This means that CocoaPods will regenerate the entire `Pods.xcodeproj` (most time consuming pipeline step) and Xcode has to reparse the entire `Pods.xcodeproj/project.pbxproj` contents before a developer can start coding again. For example, working in monorepo with ~400 pods requires around 90 seconds to complete a `pod install` and another 30 seconds for Xcode to become responsive again. The `Pods.xcodeproj` contains `65,000` objects and `300,000` lines for Xcode to parse through. Requiring developers to wait 2 minutes (and longer as these projects grow) obviates the need for some optimization for larger Pod projects by only generating the minimum subset of dependencies that have changed in a project.
+Productivity slows down singificantly in large CocoaPods environments with many active contributors because invoking `pod install` is often required for every merge, rebase, or branch switch (in addition to the required installation for every new file, module, header etc.). This means that CocoaPods will regenerate the entire `Pods.xcodeproj` (most time consuming pipeline step) and Xcode has to reparse the entire `Pods.xcodeproj/project.pbxproj` contents before a developer can start coding again. For example, working in a monorepo with ~400 pods requires around 90 seconds to complete a `pod install` and another 30 seconds for Xcode to become responsive again. The `Pods.xcodeproj` in this example monorepo contains `65,000` objects and `300,000` lines for Xcode to parse through. Requiring developers to wait 2 minutes (and longer as these projects grow) obviates the need for some optimization for larger Pod projects by only generating the minimum subset of dependencies that have changed in a project.
 
 
 ## Design (Splitting up `Pod.xcodeproj`)
@@ -89,5 +89,5 @@ The `pods_project` property on `Pod:Installer` now points to the container proje
 # Phase 2: Incremental Pod Installation
 **Coming soon**
 
-Design doc for phase 2 of this project will be published soon.
+Phase 2 of this design doc will incorporate the changes required for making the `pod install` command incremental by only generating the individual subprojects that have changed since initial setup. This will be published soon and be linked here when ready.
 
