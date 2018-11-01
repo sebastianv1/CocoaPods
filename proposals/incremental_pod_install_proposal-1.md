@@ -4,7 +4,7 @@
 **date:** 10/31/2018
 
 ## Summary
-A growing pain for developers using CocoaPods in a large codebase (>300 dependencies) is the wall clock time from invoking `pod install` to coding inside Xcode. A large portion of this time is spent generating the `Pods.xcodeproj` for every pod installation and waiting for Xcode to parse the contents of the `Pods.xcodeproj/project.pbxproj` file before a developer can begin interacting with their workspace.
+A growing pain for developers using CocoaPods in a large codebase (>300 dependencies) is the wall clock time from invoking `pod install` to coding inside Xcode. A large portion of this time is spent generating the `Pods.xcodeproj` for every pod installation and waiting for Xcode to parse the contents of the `Pods.xcodeproj/project.pbxproj` file before a developer can begin interacting with his or her workspace.
 
 Instead of generating and integrating all targets for every pod installation, we can optimize this with an incremental pod installation that would only generate and integrate pod targets that have changed since the previous installation. Implementing incremental pod installation necessitates two changes: The first is breaking up the monolithic `Pods.xcodeproj` into subprojects for each pod target (and its test targets) as a prerequesite for the second change, implementing the incremental logic to only regenerate the subprojects that have changed.
 
@@ -12,7 +12,7 @@ Instead of generating and integrating all targets for every pod installation, we
 Productivity slows down singificantly in large CocoaPods environments with many active contributors because invoking `pod install` is often required for every merge, rebase, or branch switch (in addition to the required installation for every new file, module, header etc.). This means that CocoaPods will regenerate the entire `Pods.xcodeproj` (most time consuming pipeline step) and Xcode has to reparse the entire `Pods.xcodeproj/project.pbxproj` contents before a developer can start coding again. For example, working in a monorepo with ~400 pods requires around 90 seconds to complete a `pod install` and another 30 seconds for Xcode to become responsive again. The `Pods.xcodeproj` in this example monorepo contains `65,000` objects and `300,000` lines for Xcode to parse through. Requiring developers to wait 2 minutes (and longer as these projects grow) obviates the need to optimize larger Pod projects by only regenerating the minimum subset of dependencies that have changed in a project.
 
 
-## Design (Splitting up `Pod.xcodeproj`)
+## Design (Splitting up `Pods.xcodeproj`)
 ### Overview
 ##### Installation Option
 The option to generate Xcode projects per pod target will be gated by the installation option `generate_pod_projects` set to `false` by default.
@@ -33,7 +33,9 @@ PonyDebugger.xcodeproj
 Instead of nesting `PonyDebugger` under either `Development Pods` or `Pods` previously done in `Pods.xcodeproj`, we can move it up into the project's main group. In order to wire up the project's target dependencies correctly, we also need to create a new group `Dependencies` that contains a reference to its dependent xcode projects since the Xcodeproj gem (and Xcode in general) only allows targets to add other target dependencies that either exist in the same project or in a nested subproject.
 
 ##### Performance Concerns
-By breaking up the monolothic `Pods.xcodeproj` into individual projects, we are creating more objects in general that Xcode needs to load into memory. For example, on the same sample project described in the Summary section, the total object count from just `Pods.xcodeproj` was 65,425,  and splitting up the projects created 74,676 objects. This could result in some Xcode performance issues by holding onto more objects in memory and a longer `pod install` time (about 7 seconds in the aforemetioned large sample project). However, the latter is dramatically improved by the overall goal of this project to only generate Xcode projects for the pod targets that have changed since the initial installation. Although more anecdotal, Apple seems to recommend wiring up projects in this format by nesting dependent projects, and Xcode performance seems better as source files appear to load faster when they are broken up instead of all living inside the one `Pods.xcodeproj`.
+By breaking up the monolothic `Pods.xcodeproj` into individual projects, we are creating more objects in general that Xcode needs to load into memory. For example, on the same sample project described in the Summary section, the total object count from just `Pods.xcodeproj` was 65,425,  and splitting up the projects created 74,676 objects. This could result in some Xcode performance issues by holding onto more objects in memory and a longer `pod install` time (about 7 seconds in the aforemetioned large sample project). However, the latter is dramatically improved by the overall goal of this project to only generate Xcode projects for the pod targets that have changed since the previous installation. 
+
+Although more anecdotal, Apple seems to recommend wiring up projects in this format by nesting dependent projects, and Xcode performance seems better as source files appear to load faster when they are broken up into subprojects instead of all living inside the one `Pods.xcodeproj`.
 
 
 ### Implementation Details
