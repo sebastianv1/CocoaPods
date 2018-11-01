@@ -13,7 +13,6 @@ Productivity slows singificantly in large CocoaPods environemnts with many activ
 
 
 ## Design (Splitting up `Pod.xcodeproj`)
-### Phase 1: Splitting up `Pods.xcodeproj`
 ### Overview
 ##### Installation Option
 The option to generate Xcode projects per pod target will be gated by the installation option `generate_pod_projects` set to `false` by default.
