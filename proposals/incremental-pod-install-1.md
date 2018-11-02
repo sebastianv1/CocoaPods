@@ -92,7 +92,7 @@ The `pod_target_subproject` ivar is used to switch on behavior in the method `ad
 The generated pod target projects will be written into the sandbox directory, so a new helper method will be added to `Pod::Sandbox` for determining the paths to these projects.
 ```ruby
 def target_project_path(target)
-  root.join(‘Projects’, "#{target.label}.xcodeproj")
+  root.join('Projects', "#{target.label}.xcodeproj")
 end
 ```
 
