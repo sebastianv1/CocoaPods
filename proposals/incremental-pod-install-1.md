@@ -1,5 +1,5 @@
 # Incremental Pod Installation (Phase 1)
-**author:** sebastianv1
+**author:** [sebastianv1](https://github.com/sebastianv1)
 
 **date:** 10/31/2018
 
