@@ -49,7 +49,7 @@ module Pod
           all_pod_target_installation_results = pod_target_installation_results_hash.values.inject(:merge)
           target_installation_results = InstallationResults.new(all_pod_target_installation_results, aggregate_target_installation_results)
 
-          integrate_targets(target_installation_results.pod_target_installation_results)
+          integrate_targets(target_installation_results.pod_target_installation_results) if target_installation_results.pod_target_installation_results
           wire_target_dependencies(target_installation_results, pod_target_project_hash)
 
           PodsProjectGeneratorResult.new(container_project, pod_target_installation_results_hash, target_installation_results)

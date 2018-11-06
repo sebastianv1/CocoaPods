@@ -163,66 +163,71 @@ module Pod
           aggregate_target_installation_results_hash = target_installation_results.aggregate_target_installation_results
 
           # Wire up aggregate targets
-          aggregate_target_installation_results_hash.values.each do |aggregate_target_installation_result|
-            aggregate_target = aggregate_target_installation_result.target
-            aggregate_native_target = aggregate_target_installation_result.native_target
-            is_app_extension = !(aggregate_target.user_targets.map(&:symbol_type) &
-                [:app_extension, :watch_extension, :watch2_extension, :tv_extension, :messages_extension]).empty?
-            is_app_extension ||= aggregate_target.user_targets.any? { |ut| ut.common_resolved_build_setting('APPLICATION_EXTENSION_API_ONLY') == 'YES' }
-            configure_app_extension_api_only_to_native_target(aggregate_native_target) if is_app_extension
-            # Wire up dependencies that are part of inherit search paths for this aggregate target.
-            aggregate_target.search_paths_aggregate_targets.each do |search_paths_target|
-              aggregate_native_target.add_dependency(aggregate_target_installation_results_hash[search_paths_target.name].native_target)
-            end
-            # Wire up all pod target dependencies to aggregate target.
-            aggregate_target.pod_targets.each do |pod_target|
-              pod_target_native_target = pod_target_installation_results_hash[pod_target.name].native_target
-              aggregate_native_target.add_dependency(pod_target_native_target)
-              configure_app_extension_api_only_to_native_target(pod_target_native_target) if is_app_extension
+
+          if aggregate_target_installation_results_hash
+            aggregate_target_installation_results_hash.values.each do |aggregate_target_installation_result|
+              aggregate_target = aggregate_target_installation_result.target
+              aggregate_native_target = aggregate_target_installation_result.native_target
+              is_app_extension = !(aggregate_target.user_targets.map(&:symbol_type) &
+                  [:app_extension, :watch_extension, :watch2_extension, :tv_extension, :messages_extension]).empty?
+              is_app_extension ||= aggregate_target.user_targets.any? { |ut| ut.common_resolved_build_setting('APPLICATION_EXTENSION_API_ONLY') == 'YES' }
+              configure_app_extension_api_only_to_native_target(aggregate_native_target) if is_app_extension
+              # Wire up dependencies that are part of inherit search paths for this aggregate target.
+              aggregate_target.search_paths_aggregate_targets.each do |search_paths_target|
+                aggregate_native_target.add_dependency(aggregate_target_installation_results_hash[search_paths_target.name].native_target)
+              end
+              # Wire up all pod target dependencies to aggregate target.
+              aggregate_target.pod_targets.each do |pod_target|
+                pod_target_native_target = pod_target_installation_results_hash[pod_target.name].native_target
+                aggregate_native_target.add_dependency(pod_target_native_target)
+                configure_app_extension_api_only_to_native_target(pod_target_native_target) if is_app_extension
+              end
             end
           end
 
           # Wire up pod targets
-          pod_target_installation_results_hash.values.each do |pod_target_installation_result|
-            pod_target = pod_target_installation_result.target
-            native_target = pod_target_installation_result.native_target
-            project = pod_target_installation_result.project
-            frameworks_group = project.frameworks_group
-            # First, wire up all resource bundles.
-            pod_target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
-              native_target.add_dependency(resource_bundle_target)
-              if pod_target.requires_frameworks? && pod_target.should_build?
-                native_target.add_resources([resource_bundle_target.product_reference])
+          if pod_target_installation_results_hash
+            pod_target_installation_results_hash.values.each do |pod_target_installation_result|
+              pod_target = pod_target_installation_result.target
+              native_target = pod_target_installation_result.native_target
+              project = pod_target_installation_result.project
+              frameworks_group = project.frameworks_group
+              # First, wire up all resource bundles.
+              pod_target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
+                native_target.add_dependency(resource_bundle_target)
+                if pod_target.requires_frameworks? && pod_target.should_build?
+                  native_target.add_resources([resource_bundle_target.product_reference])
+                end
               end
-            end
-            # Wire up all dependencies to this pod target, if any.
-            dependent_targets = pod_target.dependent_targets
-            dependent_targets.each do |dependent_target|
-              if pod_target_project_hash
-                dependent_project = pod_target_project_hash[dependent_target]
-                project.add_pod_target_subproject(dependent_project, project.dependencies)
+              # Wire up all dependencies to this pod target, if any.
+              dependent_targets = pod_target.dependent_targets
+              dependent_targets.each do |dependent_target|
+                if pod_target_project_hash
+                  dependent_project = pod_target_project_hash[dependent_target]
+                  project.add_pod_target_subproject(dependent_project, project.dependencies)
+                end
+                native_target.add_dependency(pod_target_installation_results_hash[dependent_target.name].native_target)
+                add_framework_file_reference_to_native_target(native_target, pod_target, dependent_target, frameworks_group)
               end
-              native_target.add_dependency(pod_target_installation_results_hash[dependent_target.name].native_target)
-              add_framework_file_reference_to_native_target(native_target, pod_target, dependent_target, frameworks_group)
-            end
-            # Wire up test native targets.
-            unless pod_target_installation_result.test_native_targets.empty?
-              pod_target_installation_result.test_specs_by_native_target.each do |test_native_target, test_specs|
-                test_dependent_targets = test_specs.flat_map { |s| pod_target.test_dependent_targets_by_spec_name[s.name] }.compact.unshift(pod_target).uniq
-                test_dependent_targets.each do |test_dependent_target|
-                  dependency_installation_result = pod_target_installation_results_hash[test_dependent_target.name]
-                  resource_bundle_native_targets = dependency_installation_result.test_resource_bundle_targets[test_specs.first.name]
-                  unless resource_bundle_native_targets.nil?
-                    resource_bundle_native_targets.each do |test_resource_bundle_target|
-                      test_native_target.add_dependency(test_resource_bundle_target)
+              # Wire up test native targets.
+              unless pod_target_installation_result.test_native_targets.empty?
+                pod_target_installation_result.test_specs_by_native_target.each do |test_native_target, test_specs|
+                  test_dependent_targets = test_specs.flat_map { |s| pod_target.test_dependent_targets_by_spec_name[s.name] }.compact.unshift(pod_target).uniq
+                  test_dependent_targets.each do |test_dependent_target|
+                    dependency_installation_result = pod_target_installation_results_hash[test_dependent_target.name]
+                    resource_bundle_native_targets = dependency_installation_result.test_resource_bundle_targets[test_specs.first.name]
+                    unless resource_bundle_native_targets.nil?
+                      resource_bundle_native_targets.each do |test_resource_bundle_target|
+                        test_native_target.add_dependency(test_resource_bundle_target)
+                      end
                     end
+                    if pod_target_project_hash
+                      dependent_project = pod_target_project_hash[test_dependent_target]
+                      project.add_pod_target_subproject(dependent_project, project.dependencies) unless dependent_project == project
+                    end
+                    test_native_target.add_dependency(dependency_installation_result.native_target)
+                    add_framework_file_reference_to_native_target(test_native_target, pod_target, test_dependent_target, frameworks_group)
                   end
-                  if pod_target_project_hash
-                    dependent_project = pod_target_project_hash[test_dependent_target]
-                    project.add_pod_target_subproject(dependent_project, project.dependencies) unless dependent_project == project
-                  end
-                  test_native_target.add_dependency(dependency_installation_result.native_target)
-                  add_framework_file_reference_to_native_target(test_native_target, pod_target, test_dependent_target, frameworks_group)
                 end
               end
             end

@@ -138,7 +138,8 @@ module Pod
       resolve_dependencies
       download_dependencies
       validate_targets
-      generate_pods_project
+      results = incremental
+      generate_pods_project(results.pod_targets, results.aggregate_targets)
       if installation_options.integrate_targets?
         integrate_user_project
       else
@@ -212,7 +213,7 @@ module Pod
 
     private
 
-    def create_generator(installation_options)
+    def create_generator(pod_targets, aggregate_targets, installation_options)
       if installation_options.generate_multi_proj
         Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets, pod_targets, analysis_result, installation_options, config)
       else
@@ -222,8 +223,11 @@ module Pod
 
     # Generate the 'Pods/Pods.xcodeproj' project.
     #
-    def generate_pods_project(generator = create_generator(installation_options))
+    def generate_pods_project(pod_targets, aggregate_targets)
       UI.section 'Generating Pods project' do
+        puts "TARGETS TO INSTALL #{pod_targets}"
+        puts "AGGS to INSTALL: #{aggregate_targets}"
+        generator = create_generator(pod_targets, aggregate_targets, installation_options)
         pod_project_generation_result = generator.generate!
         @sandbox.project = pod_project_generation_result.project
         @pods_project = pod_project_generation_result.project
