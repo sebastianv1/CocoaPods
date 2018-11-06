@@ -77,6 +77,19 @@ module Pod
 
       public
 
+      def all_files
+        [vendored_frameworks,
+         vendored_libraries,
+         resource_bundle_files,
+         license,
+         prefix_header,
+         preserve_paths,
+         readme,
+         resources,
+         source_files,
+         module_map
+        ].flatten.compact.map(&:to_s).uniq
+      end
       # @!group Paths
 
       # @return [Array<Pathname>] the source files of the specification.
