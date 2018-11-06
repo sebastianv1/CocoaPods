@@ -1,0 +1,15 @@
+AGGREGATE_TARGETS:
+  Pods-App:
+    :pod_targets:
+      - HeaderMappingsDirPod
+POD_TARGETS:
+  HeaderMappingsDirPod:
+    :checksum: 32e2f27325216c76d60d5b065f55edfdfb12a218
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/HeaderMappingsDir Example/HeaderMappingsDirPod/Foo.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/HeaderMappingsDir Example/HeaderMappingsDirPod/include"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/HeaderMappingsDir Example/HeaderMappingsDirPod/include/Bar/Bar.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/HeaderMappingsDir Example/HeaderMappingsDirPod/include/Bar/Bar_Private.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/HeaderMappingsDir Example/HeaderMappingsDirPod/include/Foo.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/HeaderMappingsDir Example/HeaderMappingsDirPod/module.modulemap"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/LICENSE"

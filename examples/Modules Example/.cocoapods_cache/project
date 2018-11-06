@@ -1,0 +1,214 @@
+AGGREGATE_TARGETS:
+  Pods-Abstract Target-iOS Pods-Dynamic:
+    :pod_targets:
+      - Alamofire-framework-iOS
+      - CustomModuleMapPod-framework-iOS
+      - MixedPod-framework-iOS
+      - ObjCPod-framework-iOS
+      - SwiftPod-framework-iOS
+  Pods-Abstract Target-iOS Pods-Static:
+    :pod_targets:
+      - Alamofire-library-iOS
+      - CustomModuleMapPod-library-iOS
+      - MixedPod-library-iOS
+      - ObjCPod-library-iOS
+      - SwiftPod-library-iOS
+  Pods-Abstract Target-macOS Pods-Dynamic:
+    :pod_targets:
+      - Alamofire-framework-macOS
+      - CustomModuleMapPod-framework-macOS
+      - MixedPod-framework-macOS
+      - ObjCPod-framework-macOS
+      - SwiftPod-framework-macOS
+  Pods-Abstract Target-macOS Pods-Static:
+    :pod_targets:
+      - Alamofire-library-macOS
+      - CustomModuleMapPod-library-macOS
+      - MixedPod-library-macOS
+      - ObjCPod-library-macOS
+      - SwiftPod-library-macOS
+POD_TARGETS:
+  Alamofire-framework-iOS:
+    :checksum: 0dda98a0ed7eec4bdcd5fe3cdd35fcd2b3022825
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/LICENSE"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/README.md"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/AFError.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Alamofire.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/DispatchQueue+Alamofire.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/MultipartFormData.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/NetworkReachabilityManager.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Notifications.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ParameterEncoding.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Request.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Response.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ResponseSerialization.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Result.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ServerTrustPolicy.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/SessionDelegate.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/SessionManager.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/TaskDelegate.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Timeline.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Validation.swift"
+  Alamofire-framework-macOS:
+    :checksum: 0dda98a0ed7eec4bdcd5fe3cdd35fcd2b3022825
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/LICENSE"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/README.md"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/AFError.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Alamofire.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/DispatchQueue+Alamofire.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/MultipartFormData.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/NetworkReachabilityManager.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Notifications.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ParameterEncoding.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Request.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Response.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ResponseSerialization.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Result.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ServerTrustPolicy.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/SessionDelegate.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/SessionManager.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/TaskDelegate.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Timeline.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Validation.swift"
+  Alamofire-library-iOS:
+    :checksum: 0dda98a0ed7eec4bdcd5fe3cdd35fcd2b3022825
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/LICENSE"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/README.md"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/AFError.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Alamofire.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/DispatchQueue+Alamofire.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/MultipartFormData.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/NetworkReachabilityManager.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Notifications.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ParameterEncoding.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Request.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Response.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ResponseSerialization.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Result.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ServerTrustPolicy.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/SessionDelegate.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/SessionManager.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/TaskDelegate.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Timeline.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Validation.swift"
+  Alamofire-library-macOS:
+    :checksum: 0dda98a0ed7eec4bdcd5fe3cdd35fcd2b3022825
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/LICENSE"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/README.md"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/AFError.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Alamofire.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/DispatchQueue+Alamofire.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/MultipartFormData.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/NetworkReachabilityManager.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Notifications.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ParameterEncoding.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Request.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Response.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ResponseSerialization.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Result.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/ServerTrustPolicy.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/SessionDelegate.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/SessionManager.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/TaskDelegate.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Timeline.swift"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Alamofire Example/Alamofire/Source/Validation.swift"
+  CustomModuleMapPod-framework-iOS:
+    :checksum: 380be3e36554a741a3a4a76c7930ddaf1ad30ee2
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMM.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMM.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMMFunctions.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CustomModuleMapPod.modulemap"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/Private/CMM+Private.h"
+  CustomModuleMapPod-framework-macOS:
+    :checksum: 380be3e36554a741a3a4a76c7930ddaf1ad30ee2
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMM.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMM.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMMFunctions.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CustomModuleMapPod.modulemap"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/Private/CMM+Private.h"
+  CustomModuleMapPod-library-iOS:
+    :checksum: 380be3e36554a741a3a4a76c7930ddaf1ad30ee2
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMM.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMM.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMMFunctions.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CustomModuleMapPod.modulemap"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/Private/CMM+Private.h"
+  CustomModuleMapPod-library-macOS:
+    :checksum: 380be3e36554a741a3a4a76c7930ddaf1ad30ee2
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMM.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMM.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CMMFunctions.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/CustomModuleMapPod.modulemap"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/CustomModuleMapPod/src/Private/CMM+Private.h"
+  MixedPod-framework-iOS:
+    :checksum: 84e392dc44c0c14665f2dd4ce1b9d2b3b11c54a0
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/bce.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/bce.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/foo.swift"
+  MixedPod-framework-macOS:
+    :checksum: 84e392dc44c0c14665f2dd4ce1b9d2b3b11c54a0
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/bce.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/bce.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/foo.swift"
+  MixedPod-library-iOS:
+    :checksum: 84e392dc44c0c14665f2dd4ce1b9d2b3b11c54a0
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/bce.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/bce.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/foo.swift"
+  MixedPod-library-macOS:
+    :checksum: 84e392dc44c0c14665f2dd4ce1b9d2b3b11c54a0
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/bce.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/bce.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/MixedPod/src/foo.swift"
+  ObjCPod-framework-iOS:
+    :checksum: b5081febf73929f54c866ab260a37723db6d5c9b
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/abc.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/abc.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/Private/abc_private.h"
+  ObjCPod-framework-macOS:
+    :checksum: b5081febf73929f54c866ab260a37723db6d5c9b
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/abc.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/abc.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/Private/abc_private.h"
+  ObjCPod-library-iOS:
+    :checksum: b5081febf73929f54c866ab260a37723db6d5c9b
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/abc.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/abc.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/Private/abc_private.h"
+  ObjCPod-library-macOS:
+    :checksum: b5081febf73929f54c866ab260a37723db6d5c9b
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/abc.h"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/abc.m"
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/ObjCPod/src/Private/abc_private.h"
+  SwiftPod-framework-iOS:
+    :checksum: 4f899dceabaa949b835d1561c24d9e8cee0332aa
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/SwiftPod/src/xyz.swift"
+  SwiftPod-framework-macOS:
+    :checksum: 4f899dceabaa949b835d1561c24d9e8cee0332aa
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/SwiftPod/src/xyz.swift"
+  SwiftPod-library-iOS:
+    :checksum: 4f899dceabaa949b835d1561c24d9e8cee0332aa
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/SwiftPod/src/xyz.swift"
+  SwiftPod-library-macOS:
+    :checksum: 4f899dceabaa949b835d1561c24d9e8cee0332aa
+    :file_list:
+      - "/Users/sebastians/Development/sebastianv1/CocoaPods/examples/Modules Example/SwiftPod/src/xyz.swift"

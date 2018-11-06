@@ -39,6 +39,8 @@ module Pod
     autoload :PodSourcePreparer,          'cocoapods/installer/pod_source_preparer'
     autoload :UserProjectIntegrator,      'cocoapods/installer/user_project_integrator'
     autoload :Xcode,                      'cocoapods/installer/xcode'
+    autoload :ProjectCache,               'cocoapods/incremental/project_cache'
+    autoload :ProjectCacheAnalyzer,       'cocoapods/incremental/project_cache_analyzer'
 
     include Config::Mixin
     include InstallationOptions::Mixin
@@ -145,6 +147,14 @@ module Pod
       perform_post_install_actions
     end
 
+    def incremental
+      proj_cache = ProjectCache.open_or_create
+      analyzer = ProjectCacheAnalyzer.new(proj_cache.project_cache, @pod_targets, @aggregate_targets)
+      result = analyzer.analyze!
+      proj_cache.update_cache(@pod_targets, @aggregate_targets)
+      result
+    end
+
     def prepare
       # Raise if pwd is inside Pods
       if Dir.pwd.start_with?(sandbox.root.to_path)
@@ -190,6 +200,10 @@ module Pod
         run_podfile_pre_install_hooks
         clean_pod_sources
       end
+    end
+
+    def incremental_installation
+
     end
 
     #-------------------------------------------------------------------------#
