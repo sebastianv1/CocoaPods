@@ -21,6 +21,16 @@ module Pod
     #
     attr_reader :development_pods
 
+    # @return [PBXGroup] The group for Dependencies.
+    # Used by `generate_multiple_pod_projects` installation option.
+    #
+    attr_reader :dependencies
+
+    # @return [Bool] Bool indicating if this project is a pod target subproject.
+    # Used by `generate_multiple_pod_projects` installation option.
+    #
+    attr_reader :pod_target_subproject
+
     # Initialize a new instance
     #
     # @param  [Pathname, String] path @see Xcodeproj::Project#path
@@ -28,13 +38,16 @@ module Pod
     # @param  [Int] object_version Object version to use for serialization, defaults to Xcode 3.2 compatible.
     #
     def initialize(path, skip_initialization = false,
-        object_version = Xcodeproj::Constants::DEFAULT_OBJECT_VERSION)
+        object_version = Xcodeproj::Constants::DEFAULT_OBJECT_VERSION,
+                   pod_target_subproject = false)
       super(path, skip_initialization, object_version)
       @support_files_group = new_group('Targets Support Files')
       @refs_by_absolute_path = {}
       @variant_groups_by_path_and_name = {}
       @pods = new_group('Pods')
       @development_pods = new_group('Development Pods')
+      @dependencies = new_group('Dependencies')
+      @pod_target_subproject = pod_target_subproject
       self.symroot = LEGACY_BUILD_ROOT
     end
 
@@ -99,17 +112,31 @@ module Pod
     def add_pod_group(pod_name, path, development = false, absolute = false)
       raise '[BUG]' if pod_group(pod_name)
 
-      parent_group = development ? development_pods : pods
+      parent_group =
+        if pod_target_subproject
+          main_group
+        else
+          development ? development_pods : pods
+        end
       source_tree = absolute ? :absolute : :group
 
       group = parent_group.new_group(pod_name, path, source_tree)
       group
     end
 
+    def add_subproject(subproject, group)
+      add_file_reference(subproject.path, group)
+    end
+
     # @return [Array<PBXGroup>] Returns all the group of the Pods.
     #
     def pod_groups
-      pods.children.objects + development_pods.children.objects
+      if pod_target_subproject
+        main_group.children.objects
+      else
+        pods.children.objects + development_pods.children.objects
+      end
+
     end
 
     # Returns the group for the Pod with the given name.

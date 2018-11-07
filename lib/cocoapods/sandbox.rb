@@ -130,6 +130,12 @@ module Pod
       root + 'Pods.xcodeproj'
     end
 
+    # @return [Pathname] the path of the project for a pod target.
+    #
+    def pod_target_project_path(pod_target)
+      root.join('Projects', "#{pod_target.label}.xcodeproj")
+    end
+
     # Returns the path for the directory where the support files of
     # a target are stored.
     #

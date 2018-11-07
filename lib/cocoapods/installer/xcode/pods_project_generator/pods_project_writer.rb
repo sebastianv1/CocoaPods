@@ -42,6 +42,7 @@ module Pod
             project.pods.remove_from_project if project.pods.empty?
             project.support_files_group.remove_from_project if project.support_files_group.empty?
             project.development_pods.remove_from_project if project.development_pods.empty?
+            project.dependencies.remove_from_project if project.dependencies.empty?
             project.sort(:groups_position => :below)
             if installation_options.deterministic_uuids?
               UI.message('- Generating deterministic UUIDs') { project.predictabilize_uuids }
