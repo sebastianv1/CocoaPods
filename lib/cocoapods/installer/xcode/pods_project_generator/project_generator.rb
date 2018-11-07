@@ -83,7 +83,7 @@ module Pod
         end
 
         def prepare(sandbox, project, pod_targets, build_configurations, platforms, podfile_path)
-          UI.message '- Creating Pods project' do
+          UI.message "- Creating #{project.path.basename}" do
             build_configurations.each do |name, type|
               project.add_build_configuration(name, type)
             end

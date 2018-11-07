@@ -2,7 +2,7 @@ module Pod
   class Installer
     class Xcode
       # The {MultiPodsProjectGenerator} handles generation of the 'Pods/Pods.xcodeproj' and Xcode projects
-      # for every Pod Target. All Pod Target projects are nested under the 'Pods.xcodeproj'.
+      # for every {PodTarget}. All Pod Target projects are nested under the 'Pods.xcodeproj'.
       #
       class MultiPodsProjectGenerator < PodsProjectGenerator
         # Generates `Pods/Pods.xcodeproj` and all pod target subprojects.
@@ -18,23 +18,23 @@ module Pod
           container_project_generator = ProjectGenerator.new(sandbox, container_project_path, [],
                                                              build_configurations, platforms, object_version,
                                                              config.podfile_path)
-
           container_project = container_project_generator.generate!
           sandbox.project = container_project
 
           # Generate and install projects per pod target.
-          pod_target_by_installation_map = {}
           pod_targets_by_project_map = Hash[pod_targets.map do |pod_target|
             project_generator = ProjectGenerator.new(sandbox, sandbox.pod_target_project_path(pod_target),
                                                      [pod_target], build_configurations, platforms,
                                                      object_version, false, true)
             target_project = project_generator.generate!
-            target_project.save
-            container_project.add_subproject(target_project, container_project.main_group)
-
+            target_project.save # TODO: optimize?
+            container_project.add_subproject(target_project, container_project.dependencies)
             install_file_references(target_project, [pod_target])
-            pod_target_by_installation_map[pod_target] = install_pod_targets(target_project, [pod_target])
             [pod_target, target_project]
+          end]
+
+          pod_target_by_installation_map = Hash[pod_targets_by_project_map.map do |pod_target, target_project|
+            [pod_target, install_pod_targets(target_project, [pod_target])].flatten
           end]
 
           aggregate_target_installation_results = install_aggregate_targets(container_project, aggregate_targets)

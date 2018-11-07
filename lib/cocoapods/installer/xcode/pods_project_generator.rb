@@ -1,7 +1,7 @@
 module Pod
   class Installer
     class Xcode
-      # The {PodsProjectGenerator} handles generation of the 'Pods/Pods.xcodeproj'
+      # The {PodsProjectGenerator} handles generation of CocoaPods Xcode projects.
       #
       class PodsProjectGenerator
         require 'cocoapods/installer/xcode/pods_project_generator/target_installer_helper'
@@ -120,34 +120,6 @@ module Pod
             end]
 
             aggregate_target_installation_results
-          end
-        end
-
-        def install_targets(project)
-          UI.message '- Installing targets' do
-            umbrella_headers_by_dir = pod_targets.map do |pod_target|
-              next unless pod_target.should_build? && pod_target.defines_module?
-              pod_target.umbrella_header_path
-            end.compact.group_by(&:dirname)
-
-            pod_target_installation_results = Hash[pod_targets.sort_by(&:name).map do |pod_target|
-              umbrella_headers_in_header_dir = umbrella_headers_by_dir[pod_target.module_map_path.dirname]
-              target_installer = PodTargetInstaller.new(sandbox, project, pod_target, umbrella_headers_in_header_dir)
-              [pod_target.name, target_installer.install!]
-            end]
-
-            # Hook up system framework dependencies for the pod targets that were just installed.
-            pod_target_installation_result_values = pod_target_installation_results.values.compact
-            unless pod_target_installation_result_values.empty?
-              add_system_framework_dependencies(pod_target_installation_result_values)
-            end
-
-            aggregate_target_installation_results = Hash[aggregate_targets.sort_by(&:name).map do |target|
-              target_installer = AggregateTargetInstaller.new(sandbox, project, target)
-              [target.name, target_installer.install!]
-            end]
-
-            InstallationResults.new(pod_target_installation_results, aggregate_target_installation_results)
           end
         end
 

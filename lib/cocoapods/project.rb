@@ -21,7 +21,7 @@ module Pod
     #
     attr_reader :development_pods
 
-    # @return [PBXGroup] The group for Dependencies.
+    # @return [PBXGroup] The group for dependencies.
     # Used by `generate_multiple_pod_projects` installation option.
     #
     attr_reader :dependencies
@@ -135,7 +135,6 @@ module Pod
       else
         pods.children.objects + development_pods.children.objects
       end
-
     end
 
     # Returns the group for the Pod with the given name.
