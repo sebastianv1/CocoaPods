@@ -14,7 +14,7 @@ module Pod
           #
           attr_reader :pod_targets
 
-          # @return [Project] The Pods project.
+          # @return [Project] The project.
           #
           attr_reader :pods_project
 
@@ -75,7 +75,7 @@ module Pod
           # @return [void]
           #
           def add_source_files_references
-            UI.message '- Adding source files to Pods project' do
+            UI.message "- Adding source files to #{pods_project.path.basename('.*')} project" do
               add_file_accessors_paths_to_pods_group(:source_files, nil, true)
             end
           end
@@ -85,7 +85,7 @@ module Pod
           # @return [void]
           #
           def add_frameworks_bundles
-            UI.message '- Adding frameworks to Pods project' do
+            UI.message "- Adding frameworks to #{pods_project.path.basename('.*')} project" do
               add_file_accessors_paths_to_pods_group(:vendored_frameworks, :frameworks)
             end
           end
@@ -95,7 +95,7 @@ module Pod
           # @return [void]
           #
           def add_vendored_libraries
-            UI.message '- Adding libraries to Pods project' do
+            UI.message "- Adding libraries to #{pods_project.path.basename('.*')} project" do
               add_file_accessors_paths_to_pods_group(:vendored_libraries, :frameworks)
             end
           end
@@ -108,14 +108,14 @@ module Pod
           # @return [void]
           #
           def add_resources
-            UI.message '- Adding resources to Pods project' do
+            UI.message "- Adding resources to #{pods_project.path.basename('.*')} project" do
               add_file_accessors_paths_to_pods_group(:resources, :resources, true)
               add_file_accessors_paths_to_pods_group(:resource_bundle_files, :resources, true)
             end
           end
 
           def add_developer_files
-            UI.message '- Adding development pod helper files to Pods project' do
+            UI.message "- Adding development pod helper files to #{pods_project.path.basename('.*')} project" do
               file_accessors.each do |file_accessor|
                 pod_name = file_accessor.spec.name
                 next unless sandbox.local?(pod_name)

@@ -34,6 +34,14 @@ module Pod
   #     +-- Manifest.lock
   #     |
   #     +-- Pods.xcodeproj
+  #  (if installation option 'generate_multiple_pod_projects' is enabled)
+  #     |
+  #     +-- PodTarget1.xcodeproj
+  #     |
+  #    ...
+  #     |
+  #     +-- PodTargetN.xcodeproj
+  #
   #
   class Sandbox
     autoload :FileAccessor,  'cocoapods/sandbox/file_accessor'
@@ -122,6 +130,14 @@ module Pod
     #
     def project_path
       root + 'Pods.xcodeproj'
+    end
+
+    # @param [PodTarget] pod_target
+    #
+    # @return [Pathname] the path of the project for a pod target.
+    #
+    def pod_target_project_path(pod_target)
+      root + "#{pod_target.pod_name}.xcodeproj"
     end
 
     # Returns the path for the directory where the support files of
