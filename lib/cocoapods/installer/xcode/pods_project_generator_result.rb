@@ -5,13 +5,13 @@ module Pod
         # A simple container produced after a pod project generation is completed.
         #
         class PodsProjectGeneratorResult
-          # @return [Project] project
+          # @return [Project] the container project
           #
           attr_reader :project
 
-          # @return [Hash<PodTarget, Project>] pod target by project map
+          # @return [Hash<Project, Array<PodTarget>] the projects by pod targets that were generated
           #
-          attr_reader :pod_target_by_project_map
+          attr_reader :project_by_pod_targets
 
           # @return [InstallationResults] target installation results
           #
@@ -20,11 +20,12 @@ module Pod
           # Initialize a new instance
           #
           # @param [Project] project @see #project
+          # @param [Hash<Project, Array<PodTarget>] @see #project_by_pod_targets
           # @param [InstallationResults] target_installation_results @see #target_installation_results
           #
-          def initialize(project, pod_target_by_project_map, target_installation_results)
+          def initialize(project, project_by_pod_targets, target_installation_results)
             @project = project
-            @pod_target_by_project_map = pod_target_by_project_map
+            @project_by_pod_targets = project_by_pod_targets
             @target_installation_results = target_installation_results
           end
         end

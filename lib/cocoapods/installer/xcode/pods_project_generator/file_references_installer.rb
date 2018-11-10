@@ -75,7 +75,7 @@ module Pod
           # @return [void]
           #
           def add_source_files_references
-            UI.message '- Adding source files to Pods project' do
+            UI.message "- Adding source files to #{pods_project.path.basename} project" do
               add_file_accessors_paths_to_pods_group(:source_files, nil, true)
             end
           end
@@ -85,6 +85,7 @@ module Pod
           # @return [void]
           #
           def add_frameworks_bundles
+            # TODO do this and rest in here
             UI.message '- Adding frameworks to Pods project' do
               add_file_accessors_paths_to_pods_group(:vendored_frameworks, :frameworks)
             end

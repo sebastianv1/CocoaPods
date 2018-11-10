@@ -21,29 +21,31 @@ module Pod
           container_project = container_project_generator.generate!
           sandbox.project = container_project
 
+          project_paths_by_pod_targets = pod_targets.group_by do |pod_target|
+            sandbox.pod_target_project_path(pod_target)
+          end
+
           # Generate and install projects per pod target.
-          pod_targets_by_project_map = Hash[pod_targets.map do |pod_target|
-            project_generator = ProjectGenerator.new(sandbox, sandbox.pod_target_project_path(pod_target),
-                                                     [pod_target], build_configurations, platforms,
-                                                     object_version, false, true)
+          project_by_pod_targets = Hash[project_paths_by_pod_targets.map do |project_path, pod_targets|
+            project_generator = ProjectGenerator.new(sandbox, project_path, pod_targets, build_configurations,
+                                                     platforms, object_version, nil, true)
             target_project = project_generator.generate!
             target_project.save # TODO: optimize?
-            container_project.add_subproject(target_project, container_project.dependencies)
-            install_file_references(target_project, [pod_target])
-            [pod_target, target_project]
+            container_project.add_subproject(target_project, container_project.dependencies).name = target_project.path.basename('.*').to_s
+            install_file_references(target_project, pod_targets)
+            [target_project, pod_targets]
           end]
 
-          pod_target_by_installation_map = Hash[pod_targets_by_project_map.map do |pod_target, target_project|
-            [pod_target, install_pod_targets(target_project, [pod_target])].flatten
-          end]
+          pod_target_installation_results = project_by_pod_targets.each_with_object({}) do |(project, pod_targets), hash|
+            hash.merge!(install_pod_targets(project, pod_targets))
+          end
 
           aggregate_target_installation_results = install_aggregate_targets(container_project, aggregate_targets)
-          pod_target_installation_results = pod_target_by_installation_map.values.inject(:merge)
           target_installation_results = InstallationResults.new(pod_target_installation_results, aggregate_target_installation_results)
 
           integrate_targets(target_installation_results.pod_target_installation_results)
-          wire_target_dependencies(target_installation_results, pod_targets_by_project_map)
-          PodsProjectGeneratorResult.new(container_project, pod_targets_by_project_map, target_installation_results)
+          wire_target_dependencies(target_installation_results)
+          PodsProjectGeneratorResult.new(container_project, project_by_pod_targets, target_installation_results)
         end
       end
     end

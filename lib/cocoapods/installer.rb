@@ -211,19 +211,19 @@ module Pod
         pod_project_generation_result = generator.generate!
         @target_installation_results = pod_project_generation_result.target_installation_results
         @pods_project = pod_project_generation_result.project
-        @pod_target_subprojects = pod_project_generation_result.pod_target_by_project_map.values
-        pod_target_by_project_map = pod_project_generation_result.pod_target_by_project_map
+        # For backwards compatibility we store this. Eventually should be removed.
+        @pod_target_subprojects = pod_project_generation_result.project_by_pod_targets.keys
         run_podfile_post_install_hooks
         pods_project_writer = Xcode::PodsProjectWriter.new(sandbox, pods_project,
                                                            target_installation_results.pod_target_installation_results,
                                                            installation_options)
         pods_project_writer.write!
-        pod_target_by_project_map.each do |pod_target, project|
+        pod_project_generation_result.project_by_pod_targets.each do |project, pod_targets|
           pod_target_project_writer = Xcode::PodsProjectWriter.new(sandbox, project,
                                                                    target_installation_results.pod_target_installation_results,
                                                                    installation_options)
           pod_target_project_writer.write!
-          generator.share_development_pod_schemes(project, development_pod_targets([pod_target]))
+          generator.share_development_pod_schemes(project, development_pod_targets(pod_targets))
         end
 
         unless installation_options.generate_multiple_pod_projects

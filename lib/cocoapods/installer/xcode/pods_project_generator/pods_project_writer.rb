@@ -38,7 +38,7 @@ module Pod
         end
 
         def write!
-          UI.message "- Writing Xcode project file to #{UI.path sandbox.project_path}" do
+          UI.message "- Writing Xcode project file to #{UI.path project.path}" do
             project.pods.remove_from_project if project.pods.empty?
             project.support_files_group.remove_from_project if project.support_files_group.empty?
             project.development_pods.remove_from_project if project.development_pods.empty?

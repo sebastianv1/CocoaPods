@@ -141,7 +141,7 @@ module Pod
     # @return [Pathname] the path of the project for a pod target.
     #
     def pod_target_project_path(pod_target)
-      root + "#{pod_target.label}.xcodeproj"
+      root + "#{pod_target.pod_name}.xcodeproj"
     end
 
     # Returns the path for the directory where the support files of

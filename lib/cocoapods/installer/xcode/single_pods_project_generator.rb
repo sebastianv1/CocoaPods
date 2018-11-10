@@ -23,7 +23,7 @@ module Pod
           aggregate_target_installation_results = install_aggregate_targets(project, aggregate_targets)
           target_installation_results = InstallationResults.new(pod_target_installation_results, aggregate_target_installation_results)
           integrate_targets(target_installation_results.pod_target_installation_results)
-          wire_target_dependencies(target_installation_results, false)
+          wire_target_dependencies(target_installation_results)
           PodsProjectGeneratorResult.new(project, {}, target_installation_results)
         end
       end

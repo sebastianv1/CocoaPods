@@ -169,7 +169,7 @@ module Pod
         #
         # @return [void]
         #
-        def wire_target_dependencies(target_installation_results, pod_target_by_project_map)
+        def wire_target_dependencies(target_installation_results)
           pod_target_installation_results_hash = target_installation_results.pod_target_installation_results
           aggregate_target_installation_results_hash = target_installation_results.aggregate_target_installation_results
 
@@ -209,11 +209,12 @@ module Pod
             # Wire up all dependencies to this pod target, if any.
             dependent_targets = pod_target.dependent_targets
             dependent_targets.each do |dependent_target|
-              if pod_target_by_project_map
-                dependent_project = pod_target_by_project_map[dependent_target]
-                project.add_subproject(dependent_project, project.dependencies)
+              dependent_native_target = pod_target_installation_results_hash[dependent_target.name].native_target
+              dependent_project = dependent_native_target.project
+              unless dependent_project == project
+                project.add_subproject(dependent_project, project.dependencies).name = dependent_project.path.basename('.*').to_s
               end
-              native_target.add_dependency(pod_target_installation_results_hash[dependent_target.name].native_target)
+              native_target.add_dependency(dependent_native_target)
               add_framework_file_reference_to_native_target(native_target, pod_target, dependent_target, frameworks_group)
             end
             # Wire up test native targets.
@@ -228,9 +229,9 @@ module Pod
                       test_native_target.add_dependency(test_resource_bundle_target)
                     end
                   end
-                  if pod_target_by_project_map
-                    dependent_test_project = pod_target_by_project_map[test_dependent_target]
-                    project.add_subproject(dependent_test_project, project.dependencies) unless dependent_test_project == project
+                  test_dependent_project = dependency_installation_result.native_target.project
+                  unless test_dependent_project == project
+                    project.add_subproject(test_dependent_project, project.dependencies).name = test_dependent_project.path.basename('.*').to_s
                   end
                   test_native_target.add_dependency(dependency_installation_result.native_target)
                   add_framework_file_reference_to_native_target(test_native_target, pod_target, test_dependent_target, frameworks_group)
@@ -249,6 +250,10 @@ module Pod
                     resource_bundle_native_targets.each do |app_resource_bundle_target|
                       app_native_target.add_dependency(app_resource_bundle_target)
                     end
+                  end
+                  app_dependent_project = dependency_installation_result.native_target.project
+                  unless app_dependent_project == project
+                    project.add_subproject(app_dependent_project, project.dependencies).name = app_dependent_project.path.basename('.*').to_s
                   end
                   app_native_target.add_dependency(dependency_installation_result.native_target)
                   add_framework_file_reference_to_native_target(app_native_target, pod_target, app_dependent_target, frameworks_group)
