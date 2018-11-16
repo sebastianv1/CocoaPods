@@ -29,13 +29,13 @@ The cache will exist under the `.project_cache` dir and store two files for the 
 ##### `TargetCacheKey`
 The `TargetCacheKey` is responsible for uniquely identifying a target and determining if a target has changed. Since CocoaPods hands off the compilation of targets to Xcode, we can determine if a target is dirty based on the following criteria:
 
-- Difference in podspec CHECKSUM values.
+- Difference in podspec checksum values.
 - Difference in build settings.
 - SHA (if one exists from the checkout options).
 - Difference in the set of files tracked (exclusive to local pods).
 
 For each `TargetCacheKey`, we will store in the `./project_cache/installation_cache` cache:
-- CHECKSUM
+- Podspec checksum
 - Path to target's xcconfig file (containing the build settings)
 - SHA (if exists)
 - List of all tracked files (exclusive to local pods)
