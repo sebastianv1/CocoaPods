@@ -31,8 +31,8 @@ The `TargetCacheKey` is responsible for uniquely identifying a target and used t
 
 - Difference in podspec CHECKSUM values.
 - Difference in build settings.
-- Difference in the set of files tracked (exclude to local pods).
 - SHA (if one exists from the checkout options).
+- Difference in the set of files tracked (exclusive to local pods).
 
 *(Maybe include?)Note on storing sets of files:* There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store the set of files as an array. Storing the list of files as an array directly seems to be the better option since it allows us to output the list of files causing a project to be regenerated that can be used by the `--verbose` flag and local testing. In addition, we will mostly be checking `TargetCacheKey` objects generated from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation (as opposed to a constant) in order to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. As a result, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance.
 
@@ -65,9 +65,9 @@ class TargetCacheKey
 ```
 
 ##### `ProjectInstallationCache`
-The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in `.project_cache/installation_cache`. In addition to storing the properties of each `TargetCacheKey` per target, this will also store the hash of user build configurations and a cache version. Since the user build configurations is applied to all projects, any changes to that hash would require a full installation. The cache version is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
+The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in `.project_cache/installation_cache`. In addition to storing the properties of each `TargetCacheKey` per target, this will also store the hash of user build configurations and a cache version. Since the user build configurations are applied to all projects, any changes to that hash would require a full installation. The cache version is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
 
-It's public interface will be:
+The `ProjectInstallationCache` public interface will be:
 ```ruby
 class ProjectInstallationCache
 
@@ -94,12 +94,12 @@ class ProjectInstallationCache
 ```
 
 #### Metadata Cache: `.project_cache/metadata_cache`
-When a pod target has changed, we only want to regenerate that specific target without having to also regenerate its dependencies if they remain unchanged. The metadata cache is responsible for storing the necessary metadata such that when a pod target is regenerated, we can construct and wire up its target dependencies again since regenerating the project will create one from scratch. 
+When a pod target has changed, we only want to regenerate the specific project it belongs to without having to also regenerate its dependencies. The metadata cache is responsible for storing the necessary metadata such that when a pod target is regenerated, we can construct and wire up its target dependencies again. 
 
-_Note: A future optimization could involve only opening up the project and selectively updating the properties that have changed. This would go along with updating the `TargetCacheKey` key_difference method to return more symbols (i.e. `:build_settings` or `:target_dependencies`)_
+_Note: A future optimization could involve only opening up the project and selectively updating the properties that have changed instead of regenerating it from scratch. This would go along with updating the `TargetCacheKey` `key_difference` method to return more specific symbols (i.e. `:build_settings` or `:target_dependencies`)_
 
 ##### `TargetMetadata`
-The `TargetMetadata` contains information needed to recreate itself as a target dependency for a parent target. This includes:
+The `TargetMetadata` contains the properties needed to recreate a target dependency for a parent target. This includes:
 - The native target UUID.
 - Container project path.
 
@@ -141,7 +141,7 @@ class ProjectMetadataCache
 
 
 #### `ProjectCacheAnalyzer`
-With our cache models, now we can analyze which targets need to be regenerated. The main function of this object is to merely output the list of `pod_targets` and `aggregate_targets` that have changed since the last installation.
+We can utilize the cache models we created to analyze which targets need to be regenerated. The `ProjectCacheAnalyzer`'s responsbility is to output the list of `pod_targets` and `aggregate_targets` that have changed since the previous installation.
 
 ```ruby
 class ProjectCacheAnalyzer
@@ -151,7 +151,7 @@ class ProjectCacheAnalyzer
 	def analyze
 ```
 
-In the pipeline of installation steps, the `ProjectCacheAnalyzer` will run right before project generation such that the project generator will only inject in the list of targets that the analyzer has determined needs to be generated.
+In the pipeline of installation steps, the `ProjectCacheAnalyzer` will run right before project generation and utilizie its result to inject the list of targets that have changed into our project generator.
 
 
 #### Wiring up cached target dependencies
@@ -166,12 +166,10 @@ Instead of caching the necessary information to recreate a `PBXTargetDependency`
 
 ## Backwards Compatibility
 
-The existing API on the `Installer` includes two properties:`pods_project` and `pod_target_subprojects`. With incremental installation, these projects may not be generated. As a result, we should add to the documentation that these values _may_ not exist. Instead of using those properties, post-install hooks should use a new property called `changed_projects` which is just an array of the list of projects that were generated as a result of the incremental installation.
+The existing API on the `Installer` object includes two properties:`pods_project` and `pod_target_subprojects`. With incremental installation, these projects may not be generated. As a result, we should add to the documentation that these values _may_ not exist. Instead of using those properties, post-install hooks should use a new property called `changed_projects` which is just a list of the projects that were generated as a result of the incremental installation.
 
 ## Other Pod Commands that use `installer.rb`
-
-`pod update` and `pod analyze` should remain unchanged as a result of the caching.
-
+`pod update` and `pod analyze` will receive the performance improvement of incremental installation, but should not require any changes.
 
     
 
