@@ -34,6 +34,12 @@ The `TargetCacheKey` is responsible for uniquely identifying a target and used t
 - SHA (if one exists from the checkout options).
 - Difference in the set of files tracked (exclusive to local pods).
 
+For each `TargetCacheKey`, we will store in the `./project_cache/installation_cache` cache:
+- CHECKSUM
+- Path to target's xcconfig file (containing the build settings)
+- SHA (if exists)
+- List of all tracked files (exclusive to local pods)
+
 *(Maybe include?)Note on storing sets of files:* There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store the set of files as an array. Storing the list of files as an array directly seems to be the better option since it allows us to output the list of files causing a project to be regenerated that can be used by the `--verbose` flag and local testing. In addition, we will mostly be checking `TargetCacheKey` objects generated from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation (as opposed to a constant) in order to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. As a result, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance.
 
 The `TargetCacheKey` public interface will be:
