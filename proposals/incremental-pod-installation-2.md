@@ -21,7 +21,7 @@ In addition to the installation option, we will add a new installation flag `--f
 ### Project Caching
 In order to enable *only* regenerating projects that have changed since the previous installation, we will be creating a cache inside the sandbox directory to store the information required to:
 1. Determine if a particular target is dirty.
-2. Recreate itself as a target dependency for parent targets that will be regenerated.
+2. Recreate itself as a target dependency for parent targets that are regenerated.
 
 The cache will exist under the `.project_cache` dir and store two files for the cases listed above: `installation_cache` and `metadata_cache`
 
@@ -31,21 +31,20 @@ The `TargetCacheKey` is responsible for uniquely identifying a target and used t
 
 - Difference in podspec CHECKSUM values.
 - Difference in build settings.
-
-Local development targets:
-- Difference in the set of files tracked.
-
-External targets:
-- SHA (if one exists from the checkout options)
+- Difference in the set of files tracked (exclude to local pods).
+- SHA (if one exists from the checkout options).
 
 *(Maybe include?)Note on storing sets of files:* There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store the set of files as an array. Storing the list of files as an array directly seems to be the better option since it allows us to output the list of files causing a project to be regenerated that can be used by the `--verbose` flag and local testing. In addition, we will mostly be checking `TargetCacheKey` objects generated from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation (as opposed to a constant) in order to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. As a result, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance.
 
-The `TargetCacheKey` object will be used to directly compare targets with each other in addition to targets stored in `.project_cache/target_key_cache`. It's public interface will be:
+The `TargetCacheKey` public interface will be:
 
 ```ruby
 class TargetCacheKey
 	# @param [Symbol] type
 	# The type of target (i.e. local, external, or aggregate)
+	
+	# @param [Hash] hash
+	# Hash contents of the cache.
 	def initialize(type, hash)
 
 	# @return [Symbol] difference
@@ -103,7 +102,6 @@ _Note: A future optimization could involve only opening up the project and selec
 The `TargetMetadata` contains information needed to recreate itself as a target dependency for a parent target. This includes:
 - The native target UUID.
 - Container project path.
-- Container project UUID.
 
 It's public interface will be:
 ```ruby
@@ -111,9 +109,8 @@ class TargetMetadata
 
 	attr_reader :native_target_uuid
 	attr_reader :container_project_path
-	attr_reader :container_project_uuid
 
-	def initialize(native_target_uuid, container_project_path, container_project_uuid)
+	def initialize(native_target_uuid, container_project_path)
 
 	def to_hash
 
@@ -158,12 +155,14 @@ In the pipeline of installation steps, the `ProjectCacheAnalyzer` will run right
 
 
 #### Wiring up cached target dependencies
-Since we will not be creating `PBXNativeTarget` objects for targets that have not changed, we need to add two new methods that will allow us to recreate the target dependencies for pod targets that have not changed with the properties stored in `TargetMetadata`.
+Since we will not be creating `PBXNativeTarget` objects for targets that have not changed, we need to add two new methods that will allow us to recreate these target dependencies from the `TargetMetadata` object for parent targets that were regenerated.
 
-`def add_cached_subproject` will belong as a part of `Pod::Project` and use the metadata `container_project_path` to recreate a file reference.
+`def add_cached_subproject(metadata, project)` will be added to `Pod::Project`.
 
 `def add_cached_dependency` will be added to the `Xcodeproj::Project::Object::AbstractTarget` object reopened and extended inside of CocoaPods. This will use the metadata `native_target_uuid` and `container_project_uuid` in order to recreate a target dependency.
 
+##### Alternative Options
+Instead of caching the necessary information to recreate a `PBXTargetDependency` object, another option would be just opening the project on disk that contains the correct target dependency. The concern for this approach is the performance cost of opening a `Pod::Project` object, especially for changes to aggregate targets since that could involve opening 300+ projects for larger apps.
 
 ## Backwards Compatibility
 
