@@ -176,9 +176,9 @@ In the pipeline of installation steps, the `ProjectCacheAnalyzer` will run right
 #### Wiring up cached target dependencies
 Since we will not be creating `PBXNativeTarget` objects for targets that have not changed, we need to add two new methods that will allow us to recreate these target dependencies from the `TargetMetadata` object for parent targets that were regenerated.
 
-`def add_cached_subproject(metadata, project)` will be added to `Pod::Project`.
+`def add_cached_subproject(metadata, group)` will be added to `Pod::Project`.
 
-`def add_cached_dependency` will be added to the `Xcodeproj::Project::Object::AbstractTarget` object reopened and extended inside of CocoaPods. This will use the metadata `native_target_uuid` and `container_project_uuid` in order to recreate a target dependency.
+`def add_cached_dependency(metadata)` will be added to the `Xcodeproj::Project::Object::AbstractTarget` and extended only inside of CocoaPods.
 
 ##### Alternative Options
 Instead of caching the necessary information to recreate a `PBXTargetDependency` object, another option would be just opening the project on disk that contains the correct target dependency. The concern for this approach is the performance cost of opening a `Pod::Project` object, especially for changes to aggregate targets since that could involve opening 300+ projects for larger apps.
