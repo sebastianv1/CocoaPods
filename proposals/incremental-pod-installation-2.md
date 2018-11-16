@@ -184,8 +184,7 @@ Since we will not be creating `PBXNativeTarget` objects for targets that have no
 Instead of caching the necessary information to recreate a `PBXTargetDependency` object, another option would be just opening the project on disk that contains the correct target dependency. The concern for this approach is the performance cost of opening a `Pod::Project` object, especially for changes to aggregate targets since that could involve opening 300+ projects for larger apps.
 
 ## Backwards Compatibility
-
-The existing API on the `Installer` object includes two properties:`pods_project` and `pod_target_subprojects`. With incremental installation, these projects may not be generated. As a result, we should add to the documentation that these values _may_ not exist. Instead of using those properties, post-install hooks should use a new property called `changed_projects` which is just a list of the projects that were generated as a result of the incremental installation.
+Using incremental installation means that only a subset of the projects that need to be regenerated will be created by the project generator. This means that the properties `pods_project` and `pod_target_subprojects` on `Pod::Installer` won't necessarily exist since they may not be created. As a result, we will add a new property `changed_project` that will hold a list of all the projects that were generated, and post-install hooks should start using this new property to map over the pods projects.
 
 ## Other Pod Commands that use `installer.rb`
 `pod update` and `pod analyze` will receive the performance improvement of incremental installation, but should not require any changes.
