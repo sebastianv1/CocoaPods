@@ -60,13 +60,13 @@ class TargetCacheKey
 	# Hash representation of TargetCacheKey. Used for cache storage.
 	def to_hash
 
-	# Converts hash to TargetCacheKey.
+	# @return [TargetCacheKey]
 	def self.cache_key_from_hash(hash)
 
-	# Converts #pod_target type to TargetCacheKey.
+	# @return [TargetCacheKey]
 	def self.cache_key_from_pod_target(pod_target)
 
-	# Converts #aggregate_target type to TargetCacheKey.
+	# @return [TargetCacheKey]
 	def self.cache_key_from_aggregate_target(aggregate_target)
 ```
 
@@ -76,11 +76,15 @@ The `ProjectInstallationCache` is responsible for creating an in-memory represen
 The `ProjectInstallationCache` public interface will be:
 ```ruby
 class ProjectInstallationCache
-
+	# @return [Hash<String, TargetCacheKey>
 	attr_reader :target_by_cache_key
+	
+	# @return [Hash{String=>Symbol}]
 	attr_reader :build_configurations
+	
+	# @return [String]
 	attr_reader :cache_version
-
+	
 	def initialize(target_by_cache_key, build_configurations, cache_version)
 
 	# Saves cache to given path.
@@ -88,14 +92,17 @@ class ProjectInstallationCache
 
 	# Hashed representation of cache.
 	def to_hash
-
+	
+	# Updates internal #target_by_cache_key
 	def update_target_keys!(pod_targets, aggregate_targets)
-
+		
+	# Updates internal #build_configurations
 	def update_build_configurations!(build_configurations)
-
+	
+	# Updates internal #cache_version
 	def update_cache_version!(cache_version)
 
-	# Parses contents of file and creates ProjectInstallationCache instance.
+	# @return [ProjectInstallationCache]
 	def self.from_file(path)
 ```
 
@@ -112,16 +119,20 @@ The `TargetMetadata` contains the properties needed to recreate a target depende
 It's public interface will be:
 ```ruby
 class TargetMetadata
-
+	# @return [String] 
 	attr_reader :native_target_uuid
+	
+	# @return [Path]
 	attr_reader :container_project_path
 
 	def initialize(native_target_uuid, container_project_path)
 
 	def to_hash
-
+	
+	# @return [TargetMetadata]
 	def self.cache_metadata_from_hash(hash)
-
+	
+	# @return [TargetMetadata]
 	def self.cache_metadata_from_native_target(native_target)
 ```
 
@@ -131,17 +142,19 @@ Similar to `ProjectInstallationCache`, this object is responsible for creating a
 It's public interface will be:
 ```ruby
 class ProjectMetadataCache
-
+	# @return [Hash<String, TargetMetadata>]
 	attr_reader :target_by_metadata
 
 	def initialize(target_by_metadata)
-
+	
 	def save(path)
-
+	
 	def to_hash
-
+	
+	# Updates internal metadata from installation results
 	def update_metadata!(aggregate_target_installation_results, pod_target_installation_results)
-
+	
+	# @return [ProjectMetadataCache]
 	def self.from_file(path)
 ```
 
