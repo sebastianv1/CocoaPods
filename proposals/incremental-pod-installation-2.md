@@ -19,15 +19,15 @@ Enabling incremental pod installation will be gated by the installation option `
 In addition to the installation option, we will add a new installation flag `--force-full-install` that can be used to ignore the contents of the cache and force a complete installation.
 
 ### Project Caching
-In order to enable *only* regenerating projects that have changed since the previous installation, we will be creating a cache inside the sandbox directory to store the information required to:
-1. Determine if a particular target is dirty.
-2. Recreate itself as a target dependency for parent targets that are regenerated.
+In order to enable *only* regenerating projects that have changed since the previous installation, we will be creating a cache inside the sandbox directory storing:
+1. A target cache key used to determine if a particular target is dirty.
+2. Target metadata used to recreate itself as a target dependency for parent targets.
 
 The cache will exist under the `.project_cache` dir and store two files for the cases listed above: `installation_cache` and `metadata_cache`
 
 #### Key Cache: `./project_cache/installation_cache`
 ##### `TargetCacheKey`
-The `TargetCacheKey` is responsible for uniquely identifying a target and used to determine if a target has changed. Since CocoaPods hands off the compilation of targets to Xcode, we can determine if a target is dirty based on the following criteria:
+The `TargetCacheKey` is responsible for uniquely identifying a target and determining if a target has changed. Since CocoaPods hands off the compilation of targets to Xcode, we can determine if a target is dirty based on the following criteria:
 
 - Difference in podspec CHECKSUM values.
 - Difference in build settings.
@@ -40,7 +40,7 @@ For each `TargetCacheKey`, we will store in the `./project_cache/installation_ca
 - SHA (if exists)
 - List of all tracked files (exclusive to local pods)
 
-*(Maybe include?)Note on storing sets of files:* There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store the set of files as an array. Storing the list of files as an array directly seems to be the better option since it allows us to output the list of files causing a project to be regenerated that can be used by the `--verbose` flag and local testing. In addition, we will mostly be checking `TargetCacheKey` objects generated from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation (as opposed to a constant) in order to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. As a result, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance.
+*(Maybe include?)Note on storing sets of files:* There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store the set of files as an array. Storing the list of files as an array directly seems better since it allows us to output the list of files causing a project to be regenerated that can be used by the `--verbose` flag and local testing. In addition, we will mostly be checking `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation (as opposed to a constant) in order to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. As a result, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance.
 
 The `TargetCacheKey` public interface will be:
 
