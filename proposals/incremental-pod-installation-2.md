@@ -19,7 +19,7 @@ Enabling incremental pod installation will be gated by the installation option `
 In addition to the installation option, we will add a new installation flag `--force-full-install` that can be used to ignore the contents of the cache and force a complete installation.
 
 ### Project Caching
-In order to enable *only* regenerating projects that have changed since the previous installation, we will be creating a cache inside the sandbox directory storing:
+In order to enable *only* regenerating projects that have changed since the previous installation, we will create a cache inside the sandbox directory storing:
 1. A target cache key used to determine if a particular target is dirty.
 2. Target metadata used to recreate itself as a target dependency for parent targets.
 
