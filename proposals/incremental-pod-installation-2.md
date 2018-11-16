@@ -1,5 +1,5 @@
 # Incremental Pod Installation (Phase 2)
-**author:** [sebastianv1](https://github.com/sebastianv1).  
+**author:** [sebastianv1](https://github.com/sebastianv1)  
 **date:** 11/16/2018
 
 ## Pre-Reads:
@@ -14,7 +14,7 @@
 ## Design (Incremental Pod Installation)
 
 ### Installation Option and Flags
-Enabling incremental pod installation will be gated by the installation option `use_incremental_installation` that depends on `generate_multiple_pod_projects` also being enabled. Installation will raise an exception early on if this condition isn't met.
+Enabling incremental pod installation will be gated by the installation option `incremental_installation` that depends on `generate_multiple_pod_projects` also being enabled. Installation will raise an exception in the `PodfileValidator` class if this condition isn't met.
 
 In addition to the installation option, we will add a new installation flag `--force-full-install` that can be used to ignore the contents of the cache and force a complete installation.
 
@@ -23,7 +23,8 @@ In order to enable *only* regenerating projects that have changed since the prev
 1. A target cache key used to determine if a particular target is dirty.
 2. Target metadata used to recreate itself as a target dependency for parent targets.
 
-The cache will exist under the `.project_cache` dir and store two files for the cases listed above: `installation_cache` and `metadata_cache`
+The cache will exist under the `.project_cache` dir and store files for the two cases listed above: `installation_cache` and `metadata_cache` in addition to a `cache_version` file that is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
+
 
 #### Key Cache: `./project_cache/installation_cache`
 ##### `TargetCacheKey`
@@ -71,8 +72,7 @@ class TargetCacheKey
 ```
 
 ##### `ProjectInstallationCache`
-The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in `.project_cache/installation_cache`. In addition to storing the properties of each `TargetCacheKey` per target, this will also store the hash of user build configurations and a cache version. Since the user build configurations are applied to all projects, any changes to that hash would require a full installation. The cache version is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
-
+The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in `.project_cache/installation_cache`. In addition to storing the properties of each `TargetCacheKey` per target, this will also store the hash of user build configurations since the user build configurations are applied to all projects and any changes would require a full installation.
 The `ProjectInstallationCache` public interface will be:
 ```ruby
 class ProjectInstallationCache
@@ -82,10 +82,7 @@ class ProjectInstallationCache
 	# @return [Hash{String=>Symbol}]
 	attr_reader :build_configurations
 	
-	# @return [String]
-	attr_reader :cache_version
-	
-	def initialize(target_by_cache_key, build_configurations, cache_version)
+	def initialize(target_by_cache_key, build_configurations)
 
 	# Saves cache to given path.
 	def save(path)
@@ -98,9 +95,6 @@ class ProjectInstallationCache
 		
 	# Updates internal #build_configurations
 	def update_build_configurations!(build_configurations)
-	
-	# Updates internal #cache_version
-	def update_cache_version!(cache_version)
 
 	# @return [ProjectInstallationCache]
 	def self.from_file(path)
@@ -190,6 +184,8 @@ Using incremental installation means that only a subset of the projects that nee
 `pod update` and `pod analyze` will receive the performance improvement of incremental installation, but should not require any changes.
 
     
+
+
 
 
 
