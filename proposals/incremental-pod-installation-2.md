@@ -3,13 +3,13 @@
 **date:** 11/16/2018
 
 ## Pre-Reads:
-[Phase 1 Doc](https://github.com/sebastianv1/CocoaPods/blob/sebastianv1/mutli-xcode-proposal/proposals/incremental-pod-install-1.md)
+[Phase 1 Doc](https://github.com/CocoaPods/CocoaPods/issues/8253)
 
 ## Summary
-[Summary](https://github.com/sebastianv1/CocoaPods/blob/sebastianv1/mutli-xcode-proposal/proposals/incremental-pod-install-1.md#Summary) from Phase 1 Doc.
+[Summary](https://github.com/CocoaPods/CocoaPods/issues/8253) from Phase 1 Doc.
 
 ## Motivation
-[Motivation](https://github.com/sebastianv1/CocoaPods/blob/sebastianv1/mutli-xcode-proposal/proposals/incremental-pod-install-1.md#Motivation) from Phase 1 Doc.
+[Motivation](https://github.com/CocoaPods/CocoaPods/issues/8253) from Phase 1 Doc.
 
 ## Design (Incremental Pod Installation)
 
