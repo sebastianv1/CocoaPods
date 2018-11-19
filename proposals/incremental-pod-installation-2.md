@@ -23,27 +23,27 @@ In order to enable *only* regenerating pod targets that have changed since the p
 1. A target cache key used to determine if a particular target is dirty.
 2. Target metadata used to recreate itself as a target dependency for parent targets.
 
-The cache will exist under the `Pods/.project_cache` dir and store files for the two cases listed above: `installation_cache` and `metadata_cache` in addition to a `cache_version` file that is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
+The cache will exist under the `Pods/.project_cache` dir and store files for the two cases listed above (`installation_cache` and `metadata_cache`) in addition to a `cache_version` file that is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
 
 Projects that keep the `Pods/` directory under source control should not commit the `Pods/.project_cache` directory. We will update the CocoaPods documentation to state the `Pods/.project_cache` path should be ignored.
 
 
 #### Key Cache: `Pods/.project_cache/installation_cache`
 ##### `TargetCacheKey`
-The `TargetCacheKey` is responsible for uniquely identifying a target and determining if a target has changed. Since CocoaPods hands off the compilation of targets to Xcode, we can determine if a target is dirty based on a difference in the following criteria:
+The `TargetCacheKey` is responsible for uniquely identifying a `Target` and determining if it has changed. We can determine if a target is dirty based on a difference in the following criteria:
 
 - Podspec checksum values.
-- Build settings.
+- Build settings (contained in target xcconfig files)
 - Set of specs to integrate.
 - Set of files tracked (exclusive to local pods).
 - Checkout options (if they exist for the pod).
 
-For each `TargetCacheKey`, we will store in the `installation_cache` cache:
+For each `TargetCacheKey`, we will store in the `installation_cache` file:
 - Podspec checksum
 - List of specification names
-- All xcconfig file paths (contains the build settings)
+- List of xcconfig file paths
 - List of all tracked files (exclusive to local pods)
-- SHA (if exists one exists from the checkout options)
+- Checkout options (if they exist for the pod).
 
 _Note on storing the list of files:_ There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store them as an array. Storing the list of files as an array seems better since it allows us to output the files causing a project to be regenerated to be used by the `--verbose` flag and local testing. In addition, we will be comparing `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. For these reasons, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance.
 
@@ -107,7 +107,7 @@ class ProjectInstallationCache
 #### Metadata Cache: `Pods/.project_cache/metadata_cache`
 When a pod target has changed, we only want to regenerate the specific project it belongs to without having to also regenerate its dependencies. The metadata cache is responsible for storing the necessary metadata such that when a pod target is regenerated, we can construct and wire up its target dependencies again. 
 
-_Note_: A future optimization could involve only opening up the project and selectively updating the properties that have changed instead of regenerating it from scratch. This would go along with updating the `TargetCacheKey` `key_difference` method to return more specific symbols (i.e. `:build_settings` or `:target_dependencies`)_
+_Note: A future optimization could involve only opening up the project and selectively updating the properties that have changed instead of regenerating it from scratch. This would go along with updating the `TargetCacheKey` `key_difference` method to return more specific symbols (i.e. `:build_settings` or `:target_dependencies`)_
 
 ##### `TargetMetadata`
 The `TargetMetadata` contains the properties needed to recreate a target dependency for a parent target. This includes:
