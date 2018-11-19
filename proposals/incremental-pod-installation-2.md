@@ -32,11 +32,13 @@ The `TargetCacheKey` is responsible for uniquely identifying a target and determ
 
 - Difference in podspec checksum values.
 - Difference in build settings.
+- Difference in set of specs to integrate.
 - Difference in the set of files tracked (exclusive to local pods).
 - SHA (if one exists from the checkout options).
 
 For each `TargetCacheKey`, we will store in the `installation_cache` cache:
 - Podspec checksum
+- List of specification names
 - All xcconfig file paths (contains the build settings)
 - List of all tracked files (exclusive to local pods)
 - SHA (if exists one exists from the checkout options)
@@ -167,7 +169,7 @@ class ProjectCacheAnalyzer
 
 ```ruby
 class ProjectCacheAnalysisResult
-	attr_reader :added_pod_targets
+  	attr_reader :added_pod_targets
  	attr_reader :added_aggregate_targets
   
  	attr_reader :removed_pod_targets
@@ -175,6 +177,7 @@ class ProjectCacheAnalysisResult
   
  	attr_reader :changed_pod_targets
   	attr_reader :changed_aggregate_targets
+end
 ```
 
 
