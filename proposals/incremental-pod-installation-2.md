@@ -30,13 +30,16 @@ Projects that keep the `Pods/` directory under source control should not commit 
 
 #### Key Cache: `Pods/.project_cache/installation_cache`
 ##### `TargetCacheKey`
-The `TargetCacheKey` is responsible for uniquely identifying a `Target` and determining if it has changed. We can determine if a target is dirty based on a difference in the following criteria:
-
+The `TargetCacheKey` is responsible for uniquely identifying a `Target` and determining if it has changed.  
+For a `PodTarget`, we can determine if it is dirty based on a difference in the following criteria:
 - Podspec checksum values.
 - Build settings (contained in target xcconfig files)
 - Set of specs to integrate.
 - Set of files tracked (exclusive to local pods).
 - Checkout options (if they exist for the pod).
+
+For an `AggregateTarget`, we can determine if it is dirty based on a difference in the following criteria:
+- Build settings (contained in target xcconfig files)
 
 For each `TargetCacheKey`, we will store in the `installation_cache` file:
 - Podspec checksum
@@ -52,7 +55,7 @@ The `TargetCacheKey` public interface will be:
 ```ruby
 class TargetCacheKey
 	# @param [Symbol] type
-	# The type of target (i.e. local, external, or aggregate)
+	# The type of target (i.e. pod_target, or aggregate_target)
 	
 	# @param [Hash] hash
 	# Hash contents of the cache.
@@ -197,7 +200,7 @@ Since we will not be creating `PBXNativeTarget` objects for targets that have no
 Instead of caching the necessary information to recreate a `PBXTargetDependency` object, another option would be just opening the project on disk that contains the correct target dependency. The concern for this approach is the performance cost of opening a `Pod::Project` object, especially for changes to aggregate targets since that could involve opening 300+ projects for larger apps.
 
 ## Backwards Compatibility
-Using incremental installation means that only a subset of the projects that need to be regenerated will be created by the project generator. This means that the properties `pods_project` and `pod_target_subprojects` on `Pod::Installer` won't necessarily exist since they may not be created. As a result, we will add a new property `generated_projects` that will hold a list of all the projects that were generated, and post-install hooks should start using this new property to map over the pods projects.
+Using incremental installation means that only a subset of the projects that need to be regenerated will be created by the project generator. This means that the properties `pods_project` and `pod_target_subprojects` on `Pod::Installer` won't necessarily exist since they may not be created. As a result, we will add a new property `generated_projects` that will hold a list of all the projects that were generated, and post-install hooks should start using this new property to map over properties they care about in the projects.
 
 ## Other Pod Commands that use `installer.rb`
 `pod update` and `pod analyze` will receive the performance improvement of incremental installation, but should not require any changes because all of the changes will happen in the installer, rather than in the install command.
