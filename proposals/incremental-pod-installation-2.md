@@ -42,6 +42,9 @@ For a `PodTarget`, we can mark it as dirty based on a difference in the followin
 Each `PodTarget` will store in the `installation_cache` file:
 - Podspec checksum
 - List of specification names
+- List of xcconfig filepaths
+- List of all files tracked (exclusive to local pods).
+- Checkout options (if they exist for the pod).
 
 For an `AggregateTarget`, we can mark it as dirty based on a difference in the following criteria:
 - Build settings (contained in target xcconfig files).
