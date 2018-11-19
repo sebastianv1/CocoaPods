@@ -19,7 +19,7 @@ Enabling incremental pod installation will be gated by the installation option `
 In addition to the installation option, we will add a new installation flag `--force-full-install` that can be used to ignore the contents of the cache and force a complete installation.
 
 ### Project Caching
-In order to enable *only* regenerating pod targets that have changed since the previous installation, we will create a cache inside the sandbox directory storing:
+In order to enable _only_ regenerating the Xcode project files for pod targets that have changed since the previous installation, we will create a cache inside the sandbox directory storing:
 1. A target cache key used to determine if a particular target is dirty.
 2. Target metadata used to recreate itself as a target dependency for parent targets.
 
@@ -30,23 +30,24 @@ Projects that keep the `Pods/` directory under source control should not commit 
 
 #### Key Cache: `Pods/.project_cache/installation_cache`
 ##### `TargetCacheKey`
-The `TargetCacheKey` is responsible for uniquely identifying a `Target` and determining if it has changed.  
-For a `PodTarget`, we can determine if it is dirty based on a difference in the following criteria:
+The `TargetCacheKey` is responsible for uniquely identifying a `Target` and determining if it has changed.
+
+For a `PodTarget`, we can mark it as dirty based on a difference in the following criteria:
 - Podspec checksum values.
 - Build settings (contained in target xcconfig files)
 - Set of specs to integrate.
 - Set of files tracked (exclusive to local pods).
 - Checkout options (if they exist for the pod).
 
-For an `AggregateTarget`, we can determine if it is dirty based on a difference in the following criteria:
-- Build settings (contained in target xcconfig files)
-
-For each `TargetCacheKey`, we will store in the `installation_cache` file:
+Each `PodTarget` will store in the `installation_cache` file:
 - Podspec checksum
 - List of specification names
+
+For an `AggregateTarget`, we can mark it as dirty based on a difference in the following criteria:
+- Build settings (contained in target xcconfig files).
+
+Each `AggregateTarget` will store in the `installation_cache` file:
 - List of xcconfig file paths
-- List of all tracked files (exclusive to local pods)
-- Checkout options (if they exist for the pod).
 
 _Note on storing the list of files:_ There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store them as an array. Storing the list of files as an array seems better since it allows us to output the files causing a project to be regenerated to be used by the `--verbose` flag and local testing. In addition, we will be comparing `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. For these reasons, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance.
 
@@ -123,11 +124,14 @@ It's public interface will be:
 class TargetMetadata
 	# @return [String] 
 	attr_reader :native_target_uuid
+
+	# @return [String]
+	attr_reader :target_label
 	
 	# @return [Path]
 	attr_reader :container_project_path
 
-	def initialize(native_target_uuid, container_project_path)
+	def initialize(native_target_uuid, target_label, container_project_path)
 
 	def to_hash
 	
