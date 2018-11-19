@@ -177,7 +177,6 @@ class ProjectCacheAnalysisResult
   
  	attr_reader :changed_pod_targets
   	attr_reader :changed_aggregate_targets
-end
 ```
 
 
