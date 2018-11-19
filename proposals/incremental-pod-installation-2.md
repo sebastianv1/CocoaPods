@@ -169,7 +169,7 @@ class ProjectMetadataCache
 
 
 #### `ProjectCacheAnalyzer`
-We can utilize the cache models we created to analyze which targets need to be regenerated. The `ProjectCacheAnalyzer` takes in an instance of `ProjectInstallationCache` and outputs a `ProjectCacheAnalysisResult` object that contains the list of targets that have been added, removed, and changed.
+We can utilize the cache models we created to analyze which targets and their associate projects need to be regenerated. The `ProjectCacheAnalyzer` takes an instance of a `ProjectInstallationCache` and outputs a `ProjectCacheAnalysisResult` object that contains the list of targets that have been added, removed, and changed.
 
 ```ruby
 class ProjectCacheAnalyzer
@@ -192,9 +192,7 @@ class ProjectCacheAnalysisResult
 ```
 
 
-
-In the pipeline of installation steps, the `ProjectCacheAnalyzer` will run right before project generation and utilize its result to inject the list of targets that have changed into our project generator.
-
+The `ProjectCacheAnalyzer` will be created by the `Pod:Installer` class and run right before project generation. The project generation step is where we will see a huge performance improvement from our caching since it will only be given the subset of pod targets that need to be generated, instead of generating all targets for every installation.
 
 #### Wiring up cached target dependencies
 Since we will not be creating `PBXNativeTarget` objects for targets that have not changed, we need to add two new methods that will allow us to recreate these target dependencies from the `TargetMetadata` object for parent targets that were regenerated.
