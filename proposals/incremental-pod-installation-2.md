@@ -112,29 +112,29 @@ class ProjectInstallationCache
 ```
 
 #### Metadata Cache: `Pods/.project_cache/metadata_cache`
-When a pod target has changed, we only want to regenerate the specific project it belongs to without having to also regenerate its dependencies. The metadata cache is responsible for storing the necessary metadata such that when a pod target is regenerated, we can construct and wire up its target dependencies again. 
+When a pod target has changed, we only want to regenerate the specific project it belongs to without having to also regenerate its dependencies or parents. The metadata cache is responsible for storing the necessary metadata such that when a pod target is regenerated, we can construct and wire up its target dependencies again. 
 
 _Note: A future optimization could involve only opening up the project and selectively updating the properties that have changed instead of regenerating it from scratch. This would go along with updating the `TargetCacheKey` `key_difference` method to return more specific symbols (i.e. `:build_settings` or `:target_dependencies`)_
 
 ##### `TargetMetadata`
 The `TargetMetadata` contains the properties needed to recreate a target dependency for a parent target. This includes:
+- Target label
 - The native target UUID.
 - Container project path.
-- Target label
 
 It's public interface will be:
 ```ruby
 class TargetMetadata
+# @return [String]
+	attr_reader :target_label
+
 	# @return [String] 
 	attr_reader :native_target_uuid
-
-	# @return [String]
-	attr_reader :target_label
 	
 	# @return [Path]
 	attr_reader :container_project_path
 
-	def initialize(native_target_uuid, target_label, container_project_path)
+	def initialize(target_label, native_target_uuid, container_project_path)
 
 	def to_hash
 	
@@ -146,7 +146,7 @@ class TargetMetadata
 ```
 
 ##### `ProjectMetadataCache`
-Similar to `ProjectInstallationCache`, this object is responsible for creating an in-memory representation of the cache stored in `metadata_cache`.
+Similar to `ProjectInstallationCache`, the `ProjectMetadataCache` object is responsible for creating an in-memory representation of the cache stored in `metadata_cache`.
 
 It's public interface will be:
 ```ruby
