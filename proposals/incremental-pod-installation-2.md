@@ -23,12 +23,14 @@ In order to enable *only* regenerating pod targets that have changed since the p
 1. A target cache key used to determine if a particular target is dirty.
 2. Target metadata used to recreate itself as a target dependency for parent targets.
 
-The cache will exist under the `Pods/.project_cache` dir and store files for the two cases listed above: `installation_cache` and `metadata_cache` in addition to a `cache_version` file that is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents. *Note*: We will update the documentation for projects that check the `Pods/` directory into source control that the `Pods/.project_cache` path should be ignored.
+The cache will exist under the `Pods/.project_cache` dir and store files for the two cases listed above: `installation_cache` and `metadata_cache` in addition to a `cache_version` file that is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
+
+Projects that keep the `Pods/` directory under source control should not commit the `Pods/.project_cache` directory. We will update the CocoaPods documentation to state the `Pods/.project_cache` path should be ignored.
 
 
 #### Key Cache: `Pods/.project_cache/installation_cache`
 ##### `TargetCacheKey`
-The `TargetCacheKey` is responsible for uniquely identifying a target and determining if a target has changed. Since CocoaPods hands off the compilation of targets to Xcode, we can determine if a target is dirty based on a difference the following criteria:
+The `TargetCacheKey` is responsible for uniquely identifying a target and determining if a target has changed. Since CocoaPods hands off the compilation of targets to Xcode, we can determine if a target is dirty based on a difference in the following criteria:
 
 - Podspec checksum values.
 - Build settings.
