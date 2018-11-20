@@ -136,7 +136,11 @@ module Pod
       resolve_dependencies
       download_dependencies
       validate_targets
-      analyze_project_cache
+      analysis_result = analyze_project_cache
+      puts "CACHE ANALYSIS:"
+      puts "POD TARGETS:\n#{analysis_result.pod_targets_to_generate}\n-----------"
+      puts "AGGRREGATE TARGETS:\n#{analysis_result.aggregate_targets_to_generate}"
+
       generate_pods_project
       if installation_options.integrate_targets?
         integrate_user_project
@@ -147,18 +151,9 @@ module Pod
     end
 
     def analyze_project_cache
-      cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
-      analysis = ProjectCacheAnalyzer.new(sandbox, cache, pod_targets, aggregate_targets).analyze
-      puts "RESULTS-----"
-      puts "CHANGED----"
-      puts analysis.changed_pod_targets
-      puts analysis.changed_aggregate_targets
-      puts "ADDED------"
-      puts analysis.added_pod_targets
-      puts analysis.added_aggregate_targets
-      puts "REMOVED------"
-      puts analysis.removed_pod_targets
-      puts analysis.removed_aggregate_targets
+      puts "STARTING ANALYSIS"
+      @installation_cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
+      ProjectCacheAnalyzer.new(sandbox, installation_cache, pod_targets, aggregate_targets).analyze
     end
 
     def prepare
@@ -214,18 +209,22 @@ module Pod
 
     private
 
-    def create_generator(generate_multiple_pod_projects = false)
+    def create_generator(pod_targets_to_generate, aggregate_targets_to_generate, generate_multiple_pod_projects = false)
       if generate_multiple_pod_projects
-        Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets, pod_targets, analysis_result, installation_options, config)
+        Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate, analysis_result, installation_options, config)
       else
-        Xcode::SinglePodsProjectGenerator.new(sandbox, aggregate_targets, pod_targets, analysis_result, installation_options, config)
+        Xcode::SinglePodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate, analysis_result, installation_options, config)
       end
     end
 
     # Generates the Xcode project(s) that go inside the `Pods/` directory.
     #
-    def generate_pods_project(generator = create_generator(installation_options.generate_multiple_pod_projects))
+    def generate_pods_project(cache_analysis_result=nil)
       UI.section 'Generating Pods project' do
+        #pod_targets_to_generate = cache_analysis_result ? cache_analysis_result.pod_targets_to_generate : pod_targets
+        #aggregate_targets_to_generate = cache_analysis_result ? cache_analysis_result.aggregate_targets_to_generate : aggregate_targets
+
+        generator = create_generator(pod_targets, aggregate_targets, installation_options.generate_multiple_pod_projects)
         pod_project_generation_result = generator.generate!
         @target_installation_results = pod_project_generation_result.target_installation_results
         @pods_project = pod_project_generation_result.project
@@ -252,6 +251,7 @@ module Pod
         generator.share_development_pod_schemes(pods_project, remaining_development_pods)
 
         write_lockfiles
+        update_project_cache(cache_analysis_result) if cache_analysis_result
       end
     end
 
@@ -289,6 +289,11 @@ module Pod
     #         generated as result of the analyzer.
     #
     attr_reader :pod_targets
+
+    attr_reader :installation_cache
+
+    attr_reader :generated_pod_targets
+    attr_reader :generated_aggregate_targets
 
     # @return [Array<Specification>] The specifications that were installed.
     #
@@ -671,6 +676,11 @@ module Pod
           f.write config.lockfile_path.read
         end
       end
+    end
+
+    def update_project_cache(cache_analysis_result)
+      installation_cache.target_by_cache_key= cache_analysis_result.target_by_cache_key
+      installation_cache.save_as(sandbox.project_installation_cache_path)
     end
 
     # Integrates the user projects adding the dependencies on the CocoaPods

@@ -36,6 +36,7 @@ module Pod
             identical = FileUtils.compare_stream(this_settings_string, other_settings_string)
             return :project if !identical
           end
+
           :none
         end
       end
@@ -50,6 +51,9 @@ module Pod
           build_settings[key] = Xcodeproj::Config.new(Pathname(path)).to_s if File.exist?(path)
         end
         hash['BUILD_SETTINGS'] = build_settings
+        if files = hash['FILES']
+          hash['FILES'] = files.sort
+        end
         type = hash['CHECKSUM'] ? :pod_target : :aggregate
         TargetCacheKey.new(type, hash)
       end
@@ -76,7 +80,7 @@ module Pod
             'BUILD_SETTINGS' => build_settings,
             'XCCONFIG_FILEPATHS' => xcconfig_paths
         }
-        contents['FILES'] = pod_target.all_files if is_local_pod
+        contents['FILES'] = pod_target.all_files.sort if is_local_pod
         contents['CHECKOUT_OPTIONS'] = checkout_options if checkout_options
         TargetCacheKey.new(:pod_target, contents)
       end

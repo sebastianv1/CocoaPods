@@ -6,6 +6,7 @@ install! 'cocoapods',
 
 target 'MultiXcodeProject' do
   pod 'Coffee', path: 'Coffee/Coffee.podspec'
+  pod 'CoffeeMachine', path: 'CoffeeMachine/CoffeeMachine.podspec'
 
   target 'MultiXcodeProjectTests' do
     inherit! :search_paths

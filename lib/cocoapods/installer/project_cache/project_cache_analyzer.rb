@@ -30,10 +30,7 @@ module Pod
         target_by_cache_key = pod_target_by_cache_key.merge(aggregate_target_by_cache_key)
 
         added_pod_targets_labels = pod_target_by_cache_key.keys - cache.target_by_cache_key.keys
-        removed_pod_targets_labels = (cache.target_by_cache_key.keys - aggregate_target_by_cache_key.keys) - pod_target_by_cache_key.keys
-
         added_aggregate_targets_labels = aggregate_target_by_cache_key.keys - cache.target_by_cache_key.keys
-        removed_aggregate_targets_labels = (cache.target_by_cache_key.keys - pod_target_by_cache_key.keys) - aggregate_target_by_cache_key.keys
 
         changed_pod_targets_labels = []
         changed_aggregate_targets_labels = []
@@ -50,18 +47,17 @@ module Pod
 
         changed_pod_targets = label_by_pod_target.select { |label, _| changed_pod_targets_labels.include?(label) }.values
         changed_aggregate_targets = label_by_aggregate_target.select { |label, _| changed_aggregate_targets_labels.include?(label) }.values
+
         added_pod_targets = label_by_pod_target.select { |label, _| added_pod_targets_labels.include?(label) }.values
         added_aggregate_targets = label_by_aggregate_target.select { |label, _| added_aggregate_targets_labels.include?(label) }.values
-
-        removed_pod_targets = label_by_pod_target.select { |label, _| removed_pod_targets_labels.include?(label) }.values
-        removed_aggregate_targets = label_by_aggregate_target.select { |label, _| removed_aggregate_targets_labels.include?(label) }.values
 
         cache.target_by_cache_key= target_by_cache_key
         cache.save_as(sandbox.project_installation_cache_path)
 
-        ProjectCacheAnalysisResult.new(changed_pod_targets, changed_aggregate_targets,
-                                       removed_pod_targets, removed_aggregate_targets,
-                                       added_pod_targets, added_aggregate_targets)
+        pod_targets_to_generate = changed_pod_targets + added_pod_targets
+        aggregate_target_to_generate = changed_aggregate_targets + added_aggregate_targets
+
+        ProjectCacheAnalysisResult.new(pod_targets_to_generate, aggregate_target_to_generate, target_by_cache_key)
       end
 
     end

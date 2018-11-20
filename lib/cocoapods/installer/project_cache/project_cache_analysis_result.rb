@@ -1,26 +1,15 @@
 module Pod
   class Installer
     class ProjectCacheAnalysisResult
-      attr_reader :changed_pod_targets
-      attr_reader :changed_aggregate_targets
+      attr_reader :pod_targets_to_generate
+      attr_reader :aggregate_targets_to_generate
+      attr_reader :target_by_cache_key
 
-      attr_reader :removed_pod_targets
-      attr_reader :removed_aggregate_targets
 
-      attr_reader :added_pod_targets
-      attr_reader :added_aggregate_targets
-
-      def initialize(changed_pod_targets, changed_aggregate_targets,
-                     removed_pod_targets, removed_aggregate_targets,
-                     added_pod_targets, added_aggregate_targets)
-        @changed_pod_targets = changed_pod_targets
-        @changed_aggregate_targets = changed_aggregate_targets
-
-        @removed_pod_targets = removed_pod_targets
-        @removed_aggregate_targets = removed_aggregate_targets
-
-        @added_pod_targets = added_pod_targets
-        @added_aggregate_targets = added_aggregate_targets
+      def initialize(pod_targets_to_generate, aggregate_targets_to_generate, target_by_cache_key)
+        @pod_targets_to_generate = pod_targets_to_generate
+        @aggregate_targets_to_generate = aggregate_targets_to_generate
+        @target_by_cache_key = target_by_cache_key
       end
 
     end
