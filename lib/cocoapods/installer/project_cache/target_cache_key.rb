@@ -28,12 +28,13 @@ module Pod
           return :project if (other.hash['XCCONFIG_FILEPATHS'].keys - hash['XCCONFIG_FILEPATHS'].keys).size > 0
 
           this_build_settings = hash['BUILD_SETTINGS']
-          other_build_settings = hash['BUILD_SETTINGS']
+          other_build_settings = other.hash['BUILD_SETTINGS']
           this_build_settings.each do |key, settings_string|
             return :project if other_build_settings[key].nil?
             this_settings_string = StringIO.new(settings_string)
             other_settings_string = StringIO.new(other_build_settings[key])
-            return :project if !FileUtils.compare_stream(this_settings_string, other_settings_string)
+            identical = FileUtils.compare_stream(this_settings_string, other_settings_string)
+            return :project if !identical
           end
           :none
         end
@@ -46,7 +47,7 @@ module Pod
       def self.from_cache_hash(hash)
         build_settings = {}
         hash['XCCONFIG_FILEPATHS'].each do |key, path|
-          build_settings[key] = Xcodeproj::Config.new(Pathname(path)).to_s
+          build_settings[key] = Xcodeproj::Config.new(Pathname(path)).to_s if File.exist?(path)
         end
         hash['BUILD_SETTINGS'] = build_settings
         type = hash['CHECKSUM'] ? :pod_target : :aggregate
