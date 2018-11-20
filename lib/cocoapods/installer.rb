@@ -40,6 +40,8 @@ module Pod
     autoload :PodSourcePreparer,          'cocoapods/installer/pod_source_preparer'
     autoload :UserProjectIntegrator,      'cocoapods/installer/user_project_integrator'
     autoload :Xcode,                      'cocoapods/installer/xcode'
+    autoload :ProjectCacheAnalyzer,       'cocoapods/installer/project_cache/project_cache_analyzer'
+    autoload :ProjectInstallationCache,   'cocoapods/installer/project_cache/project_installation_cache'
 
     include Config::Mixin
 
@@ -134,6 +136,7 @@ module Pod
       resolve_dependencies
       download_dependencies
       validate_targets
+      analyze_project_cache
       generate_pods_project
       if installation_options.integrate_targets?
         integrate_user_project
@@ -141,6 +144,21 @@ module Pod
         UI.section 'Skipping User Project Integration'
       end
       perform_post_install_actions
+    end
+
+    def analyze_project_cache
+      cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
+      analysis = ProjectCacheAnalyzer.new(sandbox, cache, pod_targets, aggregate_targets).analyze
+      puts "RESULTS-----"
+      puts "CHANGED----"
+      puts analysis.changed_pod_targets
+      puts analysis.changed_aggregate_targets
+      puts "ADDED------"
+      puts analysis.added_pod_targets
+      puts analysis.added_aggregate_targets
+      puts "REMOVED------"
+      puts analysis.removed_pod_targets
+      puts analysis.removed_aggregate_targets
     end
 
     def prepare

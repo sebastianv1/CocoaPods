@@ -110,6 +110,10 @@ module Pod
       end
     end
 
+    def xcconfig_path_for_build_configuration(configuration_name = nil)
+      xcconfig_path(configuration_name)
+    end
+
     # @return [Boolean] True if the user_target refers to a
     #         library (framework, static or dynamic lib).
     #

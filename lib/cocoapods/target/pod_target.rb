@@ -58,6 +58,10 @@ module Pod
     #
     attr_accessor :app_dependent_targets_by_spec_name
 
+    attr_reader :test_spec_build_settings
+
+    attr_reader :app_spec_build_settings
+
     # Initialize a new instance
     #
     # @param [Sandbox] sandbox @see Target#sandbox
@@ -92,6 +96,8 @@ module Pod
       @test_dependent_targets_by_spec_name = {}
       @app_dependent_targets_by_spec_name = {}
       @build_config_cache = {}
+      @test_spec_build_settings = create_test_build_settings
+      @app_spec_build_settings = create_app_build_settings
     end
 
     # Scopes the current target based on the existing pod targets within the cache.
@@ -129,6 +135,36 @@ module Pod
       else
         "#{root_spec.name}-#{scope_suffix}"
       end
+    end
+
+    def xcconfig_path_for_spec(spec=nil)
+      return xcconfig_path if spec.nil?
+      target_subspec_label = subspec_label(spec)
+      if spec.test_specification?
+        test_type = spec.consumer(platform).test_type
+        xcconfig_path("#{test_type.capitalize}-#{target_subspec_label}")
+      elsif spec.app_specification?
+        xcconfig_path(target_subspec_label)
+      else
+        raise 'Unknown Spec type'
+      end
+    end
+
+    def all_files
+      files = [
+          file_accessors.map(&:vendored_frameworks),
+          file_accessors.map(&:vendored_libraries),
+          file_accessors.map(&:resource_bundle_files),
+          file_accessors.map(&:license),
+          file_accessors.map(&:prefix_header),
+          file_accessors.map(&:preserve_paths),
+          file_accessors.map(&:readme),
+          file_accessors.map(&:resources),
+          file_accessors.map(&:source_files),
+          file_accessors.map(&:module_map),
+      ]
+
+      files.flatten.compact.map(&:to_s).uniq
     end
 
     # @return [String] the Swift version for the target. If the pod author has provided a set of Swift versions
@@ -687,6 +723,18 @@ module Pod
 
     def create_build_settings
       BuildSettings::PodTargetSettings.new(self)
+    end
+
+    def create_test_build_settings
+      Hash[test_specs.map do |test_spec|
+        [test_spec.name, BuildSettings::PodTargetSettings.new(self, test_spec)]
+      end]
+    end
+
+    def create_app_build_settings
+      Hash[app_specs.map do |app_spec|
+        [app_spec.name, BuildSettings::PodTargetSettings.new(self, app_spec)]
+      end]
     end
   end
 end

@@ -134,6 +134,10 @@ module Pod
       root + 'Pods.xcodeproj'
     end
 
+    def project_installation_cache_path
+      root.join('.project_cache', 'installation_cache')
+    end
+
     # @param [PodTarget] pod_target_name
     # Name of the pod target used to generate the path of its Xcode project.
     #
