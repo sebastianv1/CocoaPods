@@ -156,7 +156,10 @@ module Pod
       @installation_cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
       @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
       object_version = aggregate_targets.map(&:user_project).compact.map { |p| p.object_version.to_i }.min
-      ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations, object_version, pod_targets, aggregate_targets).analyze
+      cache_analysis = ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations, object_version, pod_targets, aggregate_targets).analyze
+      @generated_pod_targets = cache_analysis.pod_targets_to_generate
+      @generated_aggregate_targets = cache_analysis.aggregate_targets_to_generate
+      cache_analysis
     end
 
     def prepare
@@ -251,6 +254,7 @@ module Pod
         # The `pod_target_subprojects` is used for backwards compatibility so that consumers can iterate over
         # all pod targets across projects without needing to open each one.
         @pod_target_subprojects = pod_project_generation_result.projects_by_pod_targets.keys
+        @generated_projects = ([pods_project] + pod_target_subprojects || []).reject { |p| p.nil? }
         projects_by_pod_targets = pod_project_generation_result.projects_by_pod_targets
         run_podfile_post_install_hooks
         if pods_project
@@ -270,7 +274,7 @@ module Pod
 
         # Share the remaining pod targets. Generally this will be none for when `generate_multiple_pod_projects` is set to true
         # and all pod_targets when set to false.
-        remaining_development_pods = development_pod_targets(pod_targets - projects_by_pod_targets.values.flatten)
+        remaining_development_pods = development_pod_targets(generated_pod_targets - projects_by_pod_targets.values.flatten)
         generator.share_development_pod_schemes(pods_project, remaining_development_pods) if pods_project
 
         write_lockfiles
@@ -319,6 +323,8 @@ module Pod
 
     attr_reader :generated_pod_targets
     attr_reader :generated_aggregate_targets
+
+    attr_reader :generated_projects
 
     # @return [Array<Specification>] The specifications that were installed.
     #
