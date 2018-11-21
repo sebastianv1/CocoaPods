@@ -42,6 +42,7 @@ module Pod
     autoload :Xcode,                      'cocoapods/installer/xcode'
     autoload :ProjectCacheAnalyzer,       'cocoapods/installer/project_cache/project_cache_analyzer'
     autoload :ProjectInstallationCache,   'cocoapods/installer/project_cache/project_installation_cache'
+    autoload :ProjectMetadataCache,       'cocoapods/installer/project_cache/project_metadata_cache'
 
     include Config::Mixin
 
@@ -136,12 +137,12 @@ module Pod
       resolve_dependencies
       download_dependencies
       validate_targets
-      analysis_result = analyze_project_cache
+      cache_analysis_result = analyze_project_cache
       puts "CACHE ANALYSIS:"
-      puts "POD TARGETS:\n#{analysis_result.pod_targets_to_generate}\n-----------"
-      puts "AGGRREGATE TARGETS:\n#{analysis_result.aggregate_targets_to_generate}"
+      puts "POD TARGETS:\n#{cache_analysis_result.pod_targets_to_generate} Count: #{cache_analysis_result.pod_targets_to_generate.size}\n-----------"
+      puts "AGGRREGATE TARGETS:\n#{cache_analysis_result.aggregate_targets_to_generate}"
 
-      generate_pods_project
+      generate_pods_project(cache_analysis_result)
       if installation_options.integrate_targets?
         integrate_user_project
       else
@@ -151,9 +152,11 @@ module Pod
     end
 
     def analyze_project_cache
-      puts "STARTING ANALYSIS"
+      puts "START ANALYSIS"
       @installation_cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
-      ProjectCacheAnalyzer.new(sandbox, installation_cache, pod_targets, aggregate_targets).analyze
+      @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
+      object_version = aggregate_targets.map(&:user_project).compact.map { |p| p.object_version.to_i }.min
+      ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations, object_version, pod_targets, aggregate_targets).analyze
     end
 
     def prepare
@@ -209,11 +212,11 @@ module Pod
 
     private
 
-    def create_generator(pod_targets_to_generate, aggregate_targets_to_generate, generate_multiple_pod_projects = false)
+    def create_generator(pod_targets_to_generate, aggregate_targets_to_generate, build_configurations, project_object_version, generate_multiple_pod_projects = false)
       if generate_multiple_pod_projects
-        Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate, analysis_result, installation_options, config)
+        Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate, build_configurations, installation_options, config, project_object_version, metadata_cache)
       else
-        Xcode::SinglePodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate, analysis_result, installation_options, config)
+        Xcode::SinglePodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate, build_configurations, installation_options, config, project_object_version)
       end
     end
 
@@ -221,10 +224,27 @@ module Pod
     #
     def generate_pods_project(cache_analysis_result=nil)
       UI.section 'Generating Pods project' do
-        #pod_targets_to_generate = cache_analysis_result ? cache_analysis_result.pod_targets_to_generate : pod_targets
-        #aggregate_targets_to_generate = cache_analysis_result ? cache_analysis_result.aggregate_targets_to_generate : aggregate_targets
+        pod_targets_to_generate = cache_analysis_result ? cache_analysis_result.pod_targets_to_generate : pod_targets
+        aggregate_targets_to_generate =
+          if cache_analysis_result && cache_analysis_result.aggregate_targets_to_generate.size > 0
+            aggregate_targets
+          else
+            []
+          end
+        project_object_version =
+          if cache_analysis_result
+            cache_analysis_result.project_object_version
+          else
+            aggregate_targets.map(&:user_project).compact.map { |p| p.object_version.to_i }.min
+          end
+        project_build_configurations =
+          if cache_analysis_result
+            cache_analysis_result.build_configurations
+          else
+            build_configurations
+          end
 
-        generator = create_generator(pod_targets, aggregate_targets, installation_options.generate_multiple_pod_projects)
+        generator = create_generator(pod_targets_to_generate, aggregate_targets_to_generate, project_build_configurations, project_object_version, installation_options.generate_multiple_pod_projects)
         pod_project_generation_result = generator.generate!
         @target_installation_results = pod_project_generation_result.target_installation_results
         @pods_project = pod_project_generation_result.project
@@ -233,10 +253,13 @@ module Pod
         @pod_target_subprojects = pod_project_generation_result.projects_by_pod_targets.keys
         projects_by_pod_targets = pod_project_generation_result.projects_by_pod_targets
         run_podfile_post_install_hooks
-        pods_project_writer = Xcode::PodsProjectWriter.new(sandbox, pods_project,
-                                                           target_installation_results.pod_target_installation_results,
-                                                           installation_options)
-        pods_project_writer.write!
+        if pods_project
+          pods_project_writer = Xcode::PodsProjectWriter.new(sandbox, pods_project,
+                                                            target_installation_results.pod_target_installation_results,
+                                                            installation_options)
+          pods_project_writer.write!
+        end
+
         projects_by_pod_targets.each do |project, pod_targets|
           pod_target_project_writer = Xcode::PodsProjectWriter.new(sandbox, project,
                                                                    target_installation_results.pod_target_installation_results,
@@ -248,10 +271,10 @@ module Pod
         # Share the remaining pod targets. Generally this will be none for when `generate_multiple_pod_projects` is set to true
         # and all pod_targets when set to false.
         remaining_development_pods = development_pod_targets(pod_targets - projects_by_pod_targets.values.flatten)
-        generator.share_development_pod_schemes(pods_project, remaining_development_pods)
+        generator.share_development_pod_schemes(pods_project, remaining_development_pods) if pods_project
 
         write_lockfiles
-        update_project_cache(cache_analysis_result) if cache_analysis_result
+        update_project_cache(cache_analysis_result, target_installation_results) if cache_analysis_result
       end
     end
 
@@ -291,6 +314,8 @@ module Pod
     attr_reader :pod_targets
 
     attr_reader :installation_cache
+
+    attr_reader :metadata_cache
 
     attr_reader :generated_pod_targets
     attr_reader :generated_aggregate_targets
@@ -678,9 +703,15 @@ module Pod
       end
     end
 
-    def update_project_cache(cache_analysis_result)
+    def update_project_cache(cache_analysis_result, target_installation_results)
       installation_cache.target_by_cache_key= cache_analysis_result.target_by_cache_key
+      installation_cache.project_object_version= cache_analysis_result.project_object_version
+      installation_cache.build_configurations= cache_analysis_result.build_configurations
       installation_cache.save_as(sandbox.project_installation_cache_path)
+
+      metadata_cache.update_metadata!(target_installation_results.pod_target_installation_results || {},
+                                      target_installation_results.aggregate_target_installation_results || {})
+      metadata_cache.save_as(sandbox.project_metadata_cache_path)
     end
 
     # Integrates the user projects adding the dependencies on the CocoaPods

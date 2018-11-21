@@ -126,7 +126,7 @@ module Pod
 
       perform_linting
       warn_for_dot_swift_file_deprecation
-      perform_extensive_analysis(a_spec) if a_spec && !quick
+      perform_exte nsive_analysis(a_spec) if a_spec && !quick
 
       UI.puts ' -> '.send(result_color) << (a_spec ? a_spec.to_s : file.basename.to_s)
       print_results

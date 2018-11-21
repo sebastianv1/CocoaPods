@@ -5,20 +5,23 @@ module Pod
       attr_reader :aggregate_targets
       attr_reader :cache
       attr_reader :sandbox
+      attr_reader :build_configurations
+      attr_reader :project_object_version
 
       require 'cocoapods/installer/project_cache/project_cache_analysis_result.rb'
 
-      def initialize(sandbox, cache, pod_targets, aggregate_targets)
+      def initialize(sandbox, cache, build_configurations, project_object_version, pod_targets, aggregate_targets)
         @sandbox = sandbox
         @cache = cache
+        @build_configurations = build_configurations
         @pod_targets = pod_targets
         @aggregate_targets = aggregate_targets
+        @project_object_version = project_object_version
       end
 
       def analyze
         label_by_pod_target = Hash[pod_targets.map { |pod_target| [pod_target.label, pod_target] }]
         label_by_aggregate_target = Hash[aggregate_targets.map { |aggregate_target| [aggregate_target.label, aggregate_target] }]
-
         pod_target_by_cache_key = Hash[label_by_pod_target.map do |label, pod_target|
           local = sandbox.local?(pod_target.pod_name)
           checkout_options = sandbox.checkout_sources[pod_target.pod_name]
@@ -28,6 +31,11 @@ module Pod
           [label, TargetCacheKey.from_aggregate_target(aggregate_target)]
         end]
         target_by_cache_key = pod_target_by_cache_key.merge(aggregate_target_by_cache_key)
+
+        # Bail out early since these affect integrating ALL targets.
+        if cache.build_configurations != build_configurations || cache.project_object_version != project_object_version
+          return ProjectCacheAnalysisResult.new(pod_targets, aggregate_targets, target_by_cache_key, build_configurations, project_object_version)
+        end
 
         added_pod_targets_labels = pod_target_by_cache_key.keys - cache.target_by_cache_key.keys
         added_aggregate_targets_labels = aggregate_target_by_cache_key.keys - cache.target_by_cache_key.keys
@@ -51,13 +59,11 @@ module Pod
         added_pod_targets = label_by_pod_target.select { |label, _| added_pod_targets_labels.include?(label) }.values
         added_aggregate_targets = label_by_aggregate_target.select { |label, _| added_aggregate_targets_labels.include?(label) }.values
 
-        cache.target_by_cache_key= target_by_cache_key
-        cache.save_as(sandbox.project_installation_cache_path)
-
         pod_targets_to_generate = changed_pod_targets + added_pod_targets
         aggregate_target_to_generate = changed_aggregate_targets + added_aggregate_targets
 
-        ProjectCacheAnalysisResult.new(pod_targets_to_generate, aggregate_target_to_generate, target_by_cache_key)
+        ProjectCacheAnalysisResult.new(pod_targets_to_generate, aggregate_target_to_generate, target_by_cache_key,
+                                       build_configurations, project_object_version)
       end
 
     end
