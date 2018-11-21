@@ -16,7 +16,7 @@ module Pod
           container_project = nil
           if aggregate_targets.size > 0
             container_project_generator = ProjectGenerator.new(sandbox, container_project_path, [],
-                                                             build_configurations, all_platforms, project_version,
+                                                             build_configurations, all_platforms, project_object_version,
                                                              config.podfile_path)
             container_project = container_project_generator.generate!
           end
@@ -26,7 +26,7 @@ module Pod
             project_platforms = pod_targets.map(&:platform)
             project = ProjectGenerator.new(sandbox, project_path,
                                            pod_targets, build_configurations, project_platforms,
-                                           project_version, false, :pod_target_subproject => true).generate!
+                                           project_object_version, false, :pod_target_subproject => true).generate!
             # Instead of saving every subproject to disk, we can optimize this by creating a temporary folder
             # the file reference can use so that we only have to call `save` once for all projects.
             project.path.mkpath

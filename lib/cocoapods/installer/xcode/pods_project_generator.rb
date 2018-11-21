@@ -44,7 +44,7 @@ module Pod
 
         attr_reader :metadata_cache
 
-        attr_reader :project_version
+        attr_reader :project_object_version
 
         # Initialize a new instance
         #
@@ -55,14 +55,14 @@ module Pod
         # @param  [InstallationOptions]    installation_options  @see #installation_options
         # @param  [Config]                 config                @see #config
         #
-        def initialize(sandbox, aggregate_targets, pod_targets, build_configurations, installation_options, config, project_version, metadata_cache = nil)
+        def initialize(sandbox, aggregate_targets, pod_targets, build_configurations, installation_options, config, project_object_version, metadata_cache = nil)
           @sandbox = sandbox
           @aggregate_targets = aggregate_targets
           @pod_targets = pod_targets
           @build_configurations = build_configurations
           @installation_options = installation_options
           @config = config
-          @project_version = project_version
+          @project_object_version = project_object_version
           @metadata_cache = metadata_cache
         end
 
