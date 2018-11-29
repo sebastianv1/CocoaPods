@@ -14,7 +14,7 @@
 ## Design (Incremental Pod Installation)
 
 ### Installation Option and Flags
-Enabling incremental pod installation will be gated by the installation option `incremental_installation` that depends on `generate_multiple_pod_projects` also being enabled. This is necessary because there is no performance improvement without `generate_multiple_pod_projects` enabled since the single pods project will regenerate itself entirely for every installation. We will raise an exception in the `PodfileValidator` class if this condition isn't met.
+Enabling incremental pod installation will be gated by the installation option `incremental_installation` that depends on `generate_multiple_pod_projects` also being enabled. This is necessary because there is no performance improvement without `generate_multiple_pod_projects` enabled since the single pods project will regenerate `Pods.xcodeproj` entirely for every installation. We will raise an exception in the `PodfileValidator` class if this condition isn't met.
 
 In addition to the installation option, we will add a new installation flag `--clean-install` that can be used to ignore the contents of the cache and force a complete installation.
 
@@ -23,7 +23,7 @@ In order to enable _only_ regenerating the Xcode project files for pod targets t
 1. A target cache key per target used to determine if it is dirty.
 2. Target metadata used to recreate itself as a target dependency for parent targets.
 
-The cache will exist under the `Pods/.project_cache` dir and store files for the two cases listed above (`installation_cache` and `metadata_cache`) in addition to a `cache_version` file that is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
+The cache will exist under the `Pods/.project_cache` directory and store files for the two cases listed above (`installation_cache` and `metadata_cache`) in addition to a `cache_version` file that is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
 
 
 #### Key Cache: `Pods/.project_cache/installation_cache`
@@ -50,7 +50,7 @@ For each `AggregateTarget`, we can mark it as dirty based on a difference in the
 Each `AggregateTarget` will store in the `installation_cache` file:
 - Checksum of build settings.
 
-___Note on storing the list of files__: There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store them as an array. Storing the list of files as an array seems better since it allows us to output the files causing a project to be regenerated to be used by the `--verbose` flag and local testing. In addition, we will be comparing `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. For these reasons, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance._
+___Note on storing the list of files__: There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store them as an array. Storing the list of files as an array seems better since it allows us to output the files causing a project to be regenerated to be used by the `--verbose` flag and local testing. In addition, we will be comparing `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. For these reasons, storing the set of files as an array seems to be the better option without a performance hit._
 
 The `TargetCacheKey` public interface will be:
 
@@ -124,13 +124,13 @@ end
 ```
 
 #### Metadata Cache: `Pods/.project_cache/metadata_cache`
-When a pod target has changed, we only want to regenerate the specific project it belongs to without having to also regenerate its dependencies or parents. The metadata cache is responsible for storing the necessary metadata such that when a pod target is regenerated, we can construct and wire up its target dependencies again. 
+When a pod target has changed, we only want to regenerate the specific project it belongs to without having to also regenerate its dependencies. The metadata cache is responsible for storing the necessary metadata such that when a pod target is regenerated, we can construct its target dependencies again. 
 
 _Note: A future optimization could involve only opening up the project and selectively updating the properties that have changed instead of regenerating it from scratch. This would go along with updating the `TargetCacheKey` `key_difference` method to return more specific symbols (i.e. `:build_settings` or `:target_dependencies`)_
 
 ##### `TargetMetadata`
-The `TargetMetadata` contains the properties needed to recreate a target dependency for a parent target. This includes:
-- Target label
+The `TargetMetadata` contains the properties needed to recreate a target dependency. This includes:
+- Target label.
 - The native target UUID.
 - Container project path.
 
