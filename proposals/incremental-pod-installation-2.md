@@ -14,7 +14,7 @@
 ## Design (Incremental Pod Installation)
 
 ### Installation Option and Flags
-Enabling incremental pod installation will be gated by the installation option `incremental_installation` that depends on `generate_multiple_pod_projects` also being enabled. Installation will raise an exception in the `PodfileValidator` class if this condition isn't met.
+Enabling incremental pod installation will be gated by the installation option `incremental_installation` that depends on `generate_multiple_pod_projects` also being enabled. This is necessary because there is no performance improvement without `generate_multiple_pod_projects` enabled since the single pods project will regenerate itself entirely for every installation. We will raise an exception in the `PodfileValidator` class if this condition isn't met.
 
 In addition to the installation option, we will add a new installation flag `--clean-install` that can be used to ignore the contents of the cache and force a complete installation.
 
@@ -59,9 +59,8 @@ class TargetCacheKey
 	# @return [Symbol] The type of target. (:aggregate or :pod_target)
 	attr_reader :type
 	
-	# @param [Symbol] type @see #type
+	# @param [Symbol] type
 	# @param [Hash] hash
-	# Hash contents of the cache.
 	def initialize(type, hash)
 
 	# @return [Symbol] difference
@@ -79,6 +78,7 @@ class TargetCacheKey
 
 	# @return [TargetCacheKey]
 	def self.cache_key_from_aggregate_target(aggregate_target)
+end
 ```
 
 ##### `ProjectInstallationCache`
@@ -86,12 +86,12 @@ The `ProjectInstallationCache` is responsible for creating an in-memory represen
 The `ProjectInstallationCache` public interface will be:
 ```ruby
 class ProjectInstallationCache
-	# @return [Hash<String, TargetCacheKey>
-	# Mapping from #Target to #TargetCacheKey. 
+	# @return [Hash<String, TargetCacheKey> Mapping from #Target to #TargetCacheKey. 
 	attr_reader :cache_key_by_target
 	
 	# @return [Hash{String=>Symbol}]
 	attr_reader :build_configurations
+	
 	# @return [String]
 	attr_reader :project_object_version
 
@@ -114,11 +114,13 @@ class ProjectInstallationCache
 		
 	# Updates internal #build_configurations
 	def build_configurations=(build_configurations)
+	
 	# Updates internal project object version
 	def project_object_version=(project_object_version)
 
 	# @return [ProjectInstallationCache]
 	def self.from_file(path)
+end
 ```
 
 #### Metadata Cache: `Pods/.project_cache/metadata_cache`
@@ -161,6 +163,7 @@ class TargetMetadata
 	
 	# @return [TargetMetadata]
 	def self.cache_metadata_from_native_target(native_target)
+end
 ```
 
 ##### `ProjectMetadataCache`
@@ -184,6 +187,7 @@ class ProjectMetadataCache
 	
 	# @return [ProjectMetadataCache]
 	def self.from_file(path)
+end
 ```
 
 
@@ -220,6 +224,7 @@ class ProjectCacheAnalyzer
 
 	# @return [ProjectCacheAnalysisResult] Analysis result.
 	def analyze
+end
 ```
 
 ```ruby
@@ -238,6 +243,7 @@ class ProjectCacheAnalysisResult
 	
 	# @return [String] project_object_version
 	attr_reader :project_object_version
+end
   ```
 
 
