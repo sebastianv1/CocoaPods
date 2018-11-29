@@ -16,51 +16,50 @@
 ### Installation Option and Flags
 Enabling incremental pod installation will be gated by the installation option `incremental_installation` that depends on `generate_multiple_pod_projects` also being enabled. Installation will raise an exception in the `PodfileValidator` class if this condition isn't met.
 
-In addition to the installation option, we will add a new installation flag `--force-full-install` that can be used to ignore the contents of the cache and force a complete installation.
+In addition to the installation option, we will add a new installation flag `--clean-install` that can be used to ignore the contents of the cache and force a complete installation.
 
 ### Project Caching
 In order to enable _only_ regenerating the Xcode project files for pod targets that have changed since the previous installation, we will create a cache inside the sandbox directory storing:
-1. A target cache key used to determine if a particular target is dirty.
+1. A target cache key per target used to determine if it is dirty.
 2. Target metadata used to recreate itself as a target dependency for parent targets.
 
 The cache will exist under the `Pods/.project_cache` dir and store files for the two cases listed above (`installation_cache` and `metadata_cache`) in addition to a `cache_version` file that is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
-
-Projects that keep the `Pods/` directory under source control should not commit the `Pods/.project_cache` directory. We will update the CocoaPods documentation to state the `Pods/.project_cache` path should be ignored.
 
 
 #### Key Cache: `Pods/.project_cache/installation_cache`
 ##### `TargetCacheKey`
 The `TargetCacheKey` is responsible for uniquely identifying a `Target` and determining if it has changed.
 
-For a `PodTarget`, we can mark it as dirty based on a difference in the following criteria:
+For each `PodTarget`, we can mark it as dirty based on a difference in the following criteria:
 - Podspec checksum values.
-- Build settings (contained in target xcconfig files)
+- Build settings
 - Set of specs to integrate.
 - Set of files tracked (exclusive to local pods).
 - Checkout options (if they exist for the pod).
 
 Each `PodTarget` will store in the `installation_cache` file:
-- Podspec checksum
-- List of specification names
-- List of xcconfig filepaths
+- Podspec checksum.
+- List of specification names.
+- Checksum of build settings.
 - List of all files tracked (exclusive to local pods).
 - Checkout options (if they exist for the pod).
 
-For an `AggregateTarget`, we can mark it as dirty based on a difference in the following criteria:
-- Build settings (contained in target xcconfig files).
+For each `AggregateTarget`, we can mark it as dirty based on a difference in the following criteria:
+- Build settings.
 
 Each `AggregateTarget` will store in the `installation_cache` file:
-- List of xcconfig file paths
+- Checksum of build settings.
 
-_Note on storing the list of files:_ There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store them as an array. Storing the list of files as an array seems better since it allows us to output the files causing a project to be regenerated to be used by the `--verbose` flag and local testing. In addition, we will be comparing `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. For these reasons, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance.
+___Note on storing the list of files__: There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store them as an array. Storing the list of files as an array seems better since it allows us to output the files causing a project to be regenerated to be used by the `--verbose` flag and local testing. In addition, we will be comparing `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. For these reasons, storing the set of files as an array seems to be the better option with only one extra iteration incurred for performance._
 
 The `TargetCacheKey` public interface will be:
 
 ```ruby
 class TargetCacheKey
-	# @param [Symbol] type
-	# The type of target (i.e. pod_target, or aggregate_target)
+	# @return [Symbol] The type of target. (:aggregate or :pod_target)
+	attr_reader :type
 	
+	# @param [Symbol] type @see #type
 	# @param [Hash] hash
 	# Hash contents of the cache.
 	def initialize(type, hash)
@@ -83,17 +82,26 @@ class TargetCacheKey
 ```
 
 ##### `ProjectInstallationCache`
-The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in the `installation_cache` file. In addition to storing the properties of each `TargetCacheKey` per target, the `installation_cache` file will also store the hash of user build configurations since they are applied to all projects and any changes would require a full installation.
+The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in the `installation_cache` file. In addition to storing the properties of each `TargetCacheKey` per target, the `installation_cache` file will also store the hash of user build configurations and project object version. These properties are applied to all projects and any changes would require a full installation.
 The `ProjectInstallationCache` public interface will be:
 ```ruby
 class ProjectInstallationCache
 	# @return [Hash<String, TargetCacheKey>
-	attr_reader :target_by_cache_key
+	# Mapping from #Target to #TargetCacheKey. 
+	attr_reader :cache_key_by_target
 	
 	# @return [Hash{String=>Symbol}]
 	attr_reader :build_configurations
-	
-	def initialize(target_by_cache_key, build_configurations)
+	# @return [String]
+	attr_reader :project_object_version
+
+	# @param [Hash<Target, TargetCacheKey>] cache_key_by_target @see #cache_key_by_target
+	# @param [Hash] hash The contents of the cache.
+	def initialize(type, hash)
+
+	# @return [Symbol] difference
+	# For now, returns :none if the keys are equal and :project if they are different.
+	def initialize(cache_key_by_target, build_configurations)
 
 	# Saves cache to given path.
 	def save_as(path)
@@ -101,11 +109,13 @@ class ProjectInstallationCache
 	# Hashed representation of cache.
 	def to_hash
 	
-	# Updates internal #target_by_cache_key
-	def update_target_keys!(pod_targets, aggregate_targets)
+	# Updates internal #cache_key_by_target
+	def cache_key_by_target=(cache_key_by_target)
 		
 	# Updates internal #build_configurations
-	def update_build_configurations!(build_configurations)
+	def build_configurations=(build_configurations)
+	# Updates internal project object version
+	def project_object_version=(project_object_version)
 
 	# @return [ProjectInstallationCache]
 	def self.from_file(path)
@@ -126,16 +136,24 @@ It's public interface will be:
 ```ruby
 class TargetMetadata
 # @return [String]
+# The label (or name) of a Target
+	# @return [String]
+	# The label (or name) of the target
 	attr_reader :target_label
 
 	# @return [String] 
+	# The UUID of the native target stored in its project.
 	attr_reader :native_target_uuid
 	
 	# @return [Path]
+	# Project path
 	attr_reader :container_project_path
-
+	
+	# @param [String] target_label @see #target_label
+	# @param [String] native_target_uuid @see #native_target_uuid
+	# @param [String] container_project_path @see #container_project_path
 	def initialize(target_label, native_target_uuid, container_project_path)
-
+	
 	def to_hash
 	
 	# @return [TargetMetadata]
@@ -153,7 +171,8 @@ It's public interface will be:
 class ProjectMetadataCache
 	# @return [Hash<String, TargetMetadata>]
 	attr_reader :target_by_metadata
-
+	
+	# @param [Hash<String, TargetMetadata>] @see #target_by_metadata
 	def initialize(target_by_metadata)
 	
 	def save_as(path)
@@ -169,11 +188,35 @@ class ProjectMetadataCache
 
 
 #### `ProjectCacheAnalyzer`
-We can utilize the cache models we created to analyze which targets and their associate projects need to be regenerated. The `ProjectCacheAnalyzer` takes an instance of a `ProjectInstallationCache` and outputs a `ProjectCacheAnalysisResult` object that contains the list of targets that have been added, removed, and changed.
+We can utilize the cache models we created to analyze which targets and their associate projects need to be regenerated. The `ProjectCacheAnalyzer` takes an instance of a `ProjectInstallationCache` and outputs a `ProjectCacheAnalysisResult` object that will be used by the project generation step.
 
 ```ruby
 class ProjectCacheAnalyzer
-	def initialize(project_key_cache, pod_targets, aggregate_targets)
+	# @return [Array<PodTarget>] List of all pod targets
+	attr_reader :pod_targets
+	
+	# @return [Array<AggregateTarget>] List of all aggregate targets
+      	attr_reader :aggregate_targets
+	
+	# @return [ProjectInstallationCache] cache used for analysis.
+     	attr_reader :cache
+	
+	# @return [Sandbox] Project sandbox.
+      	attr_reader :sandbox
+	
+	# @return [Hash{String=>Symbol}] project build configurations
+      	attr_reader :build_configurations
+	
+	# @return [String] object version of user project.
+      	attr_reader :project_object_version
+
+	# @param [Sandbox] sandbox @see #sandbox
+	# @param [ProjectInstallationCache] cache @see #cache
+	# @param [Hash{String=>Symbol}] build_configurations @see #build_configurations
+	# @param [String] project_object_version @see #project_object_version
+	# @param [Array<PodTarget>] pod_targets @see #pod_targets
+	# @param [Array<AggregateTarget>] aggregate_targets @see #aggregate_targets
+	def initialize(sandbox, cache, build_configurations, project_object_version, pod_targets, aggregate_targets)
 
 	# @return [ProjectCacheAnalysisResult] Analysis result.
 	def analyze
@@ -181,15 +224,21 @@ class ProjectCacheAnalyzer
 
 ```ruby
 class ProjectCacheAnalysisResult
-  	attr_reader :added_pod_targets
- 	attr_reader :added_aggregate_targets
-  
- 	attr_reader :removed_pod_targets
- 	attr_reader :removed_aggregate_targets
-  
- 	attr_reader :changed_pod_targets
-  	attr_reader :changed_aggregate_targets
-```
+	# @return [Array<PodTarget>] List of pod targets that needs generation.
+	attr_reader :pod_targets_to_generate
+	
+	# @return [Array<AggregateTarget>] List of aggregate targets that needs generation.
+ 	attr_reader :aggregate_targets_to_generate
+	
+	# @return [Hash<Target, TargetCacheKey>] The generated hash of targets cache key.
+	attr_reader :cache_key_by_target
+	
+	# @return [Hash{String=>Symbol}] Build configurations to integrate.
+	attr_reader :build_configurations
+	
+	# @return [String] project_object_version
+	attr_reader :project_object_version
+  ```
 
 
 The `ProjectCacheAnalyzer` will be created by the `Pod::Installer` class and run right before project generation. The project generation step is where we will see a huge performance improvement from our caching since it will only be given the subset of pod targets that need to be generated, instead of generating all targets for every installation.
