@@ -82,7 +82,7 @@ end
 ```
 
 ##### `ProjectInstallationCache`
-The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in the `installation_cache` file. In addition to storing the properties of each `TargetCacheKey` per target, the `installation_cache` file will also store the hash of user build configurations and project object version. These properties are applied to all projects and any changes would require a full installation.
+The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in the `installation_cache` file. In addition to storing the properties of each `TargetCacheKey` per target, the `installation_cache` file will also store the hash of user build configurations and project object version. These properties are applied to all projects and any changes to their values would require a full installation.
 The `ProjectInstallationCache` public interface will be:
 ```ruby
 class ProjectInstallationCache
