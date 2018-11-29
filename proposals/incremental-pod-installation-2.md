@@ -137,8 +137,6 @@ The `TargetMetadata` contains the properties needed to recreate a target depende
 It's public interface will be:
 ```ruby
 class TargetMetadata
-# @return [String]
-# The label (or name) of a Target
 	# @return [String]
 	# The label (or name) of the target
 	attr_reader :target_label
