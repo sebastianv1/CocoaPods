@@ -2,9 +2,6 @@
 **author:** [sebastianv1](https://github.com/sebastianv1)  
 **date:** 11/16/2018
 
-## Pre-Reads:
-[Phase 1 Doc](https://github.com/CocoaPods/CocoaPods/issues/8253)
-
 ## Summary
 [Summary](https://github.com/CocoaPods/CocoaPods/issues/8253) from Phase 1 Doc.
 
