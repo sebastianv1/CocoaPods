@@ -41,7 +41,7 @@ Each `PodTarget` will store in the `installation_cache` file:
 - List of all files tracked (exclusive to local pods).
 - Checkout options (if they exist for the pod).
 
-For each `AggregateTarget`, we can mark it as dirty solely based on a difference in the build settings. This is because we only care about a difference in the set of its pod or the way it's built, which is encapsulated in the aggregate target's build settings.
+For each `AggregateTarget`, we can mark it as dirty based on a difference in just the build settings. This is because we only care about a difference in the set of its pod targets or the way it's built, which are encapsulated in the aggregate target's build settings.
 
 Each `AggregateTarget` will store in the `installation_cache` file:
 - Checksum of build settings.
