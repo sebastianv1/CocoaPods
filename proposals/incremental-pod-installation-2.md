@@ -41,13 +41,12 @@ Each `PodTarget` will store in the `installation_cache` file:
 - List of all files tracked (exclusive to local pods).
 - Checkout options (if they exist for the pod).
 
-For each `AggregateTarget`, we can mark it as dirty based on a difference in the following criteria:
-- Build settings.
+---
+
+For each `AggregateTarget`, we can mark it as dirty solely based on a difference in the build settings. This is because we only care about a difference in the set of its pod or the way it's built, which is encapsulated in the aggregate target's build settings.
 
 Each `AggregateTarget` will store in the `installation_cache` file:
 - Checksum of build settings.
-
-___Note on storing the list of files__: There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store them as an array. Storing the list of files as an array seems better since it allows us to output the diff of files that caused a target to be regenerated. This diff can be used by the `--verbose` flag and local testing. In addition, we will be comparing `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation to compute the checksum from the list of files on the `PodTarget` to compare against the cached checksum. For these reasons, storing the set of files as an array seems to be the better option without a performance hit._
 
 The `TargetCacheKey` public interface will be:
 
@@ -78,27 +77,27 @@ class TargetCacheKey
 end
 ```
 
+_Note: A future optimization could involve only opening up the project and selectively updating the properties that have changed instead of regenerating it from scratch. This would go along with updating the `TargetCacheKey` `key_difference` method to return more specific symbols (i.e. `:build_settings` or `:target_dependencies`)_
+
 ##### `ProjectInstallationCache`
-The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in the `installation_cache` file. In addition to storing the properties of each `TargetCacheKey` per target, the `installation_cache` file will also store the hash of user build configurations and project object version. These properties are applied to all projects and any changes to their values would require a full installation.
+The `ProjectInstallationCache` is responsible for creating an in-memory representation of the cache stored in the `installation_cache` file. We will store a `TargetCacheKey` per target in addition to a hash of the user build configurations and user-project object version. The user build configurations and project object version have a global scope in the cache because they are applied to all projects and any changes to their values would require a full installation.
+
 The `ProjectInstallationCache` public interface will be:
 ```ruby
 class ProjectInstallationCache
 	# @return [Hash<String, TargetCacheKey> Mapping from #Target to #TargetCacheKey. 
 	attr_reader :cache_key_by_target
 	
-	# @return [Hash{String=>Symbol}]
+	# @return [Hash{String=>Symbol}] User build configurations.
 	attr_reader :build_configurations
 	
-	# @return [String]
+	# @return [String] Xcode project object version.
 	attr_reader :project_object_version
 
 	# @param [Hash<Target, TargetCacheKey>] cache_key_by_target @see #cache_key_by_target
-	# @param [Hash] hash The contents of the cache.
-	def initialize(type, hash)
-
-	# @return [Symbol] difference
-	# For now, returns :none if the keys are equal and :project if they are different.
-	def initialize(cache_key_by_target, build_configurations)
+	# @param [Hash{String=>Symbol}] build_configurations @see #build_configurations
+	# @param [String] project_object_version  @see #project_object_version
+	def initialize(cache_key_by_target, build_configurations, project_object_version)
 
 	# Saves cache to given path.
 	def save_as(path)
@@ -112,7 +111,7 @@ class ProjectInstallationCache
 	# Updates internal #build_configurations
 	def build_configurations=(build_configurations)
 	
-	# Updates internal project object version
+	# Updates internal #project_object_version
 	def project_object_version=(project_object_version)
 
 	# @return [ProjectInstallationCache]
@@ -121,9 +120,7 @@ end
 ```
 
 #### Metadata Cache: `Pods/.project_cache/metadata_cache`
-When a pod target has changed, we only want to regenerate the specific project it belongs to without having to also regenerate its dependencies. The metadata cache is responsible for storing the necessary metadata such that when a pod target is regenerated, we can construct its target dependencies again. 
-
-_Note: A future optimization could involve only opening up the project and selectively updating the properties that have changed instead of regenerating it from scratch. This would go along with updating the `TargetCacheKey` `key_difference` method to return more specific symbols (i.e. `:build_settings` or `:target_dependencies`)_
+When a pod target has changed, we only want to regenerate the specific project it belongs to without regenerating its dependencies. The metadata cache is responsible for storing the necessary metadata for a target to be reconstructed as a target dependency.
 
 ##### `TargetMetadata`
 The `TargetMetadata` contains the properties needed to recreate a target dependency. This includes:
