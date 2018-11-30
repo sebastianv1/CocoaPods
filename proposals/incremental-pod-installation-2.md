@@ -118,10 +118,10 @@ end
 ```
 
 #### Metadata Cache: `Pods/.project_cache/metadata_cache`
-When a pod target has changed, we only want to regenerate the specific project it belongs to without regenerating its dependencies. The metadata cache is responsible for storing the necessary metadata for a target to be reconstructed as a target dependency.
+When a pod target has changed, we only want to regenerate the specific project it belongs to without regenerating its dependencies. The metadata cache is responsible for storing the necessary metadata for a target to be reconstruct its target dependencies.
 
 ##### `TargetMetadata`
-The `TargetMetadata` contains the properties needed to recreate a target dependency. This includes:
+The `TargetMetadata` properties needed to recreate a target dependency includes:
 - Target label.
 - The native target UUID.
 - Container project path.
@@ -157,7 +157,7 @@ end
 ```
 
 ##### `ProjectMetadataCache`
-Similar to `ProjectInstallationCache`, the `ProjectMetadataCache` object is responsible for creating an in-memory representation of the cache stored in `metadata_cache`.
+Similar to `ProjectInstallationCache`, the `ProjectMetadataCache` object is responsible for creating an in-memory representation of the cache stored in the `metadata_cache` file.
 
 It's public interface will be:
 ```ruby
@@ -179,6 +179,16 @@ class ProjectMetadataCache
 	def self.from_file(path)
 end
 ```
+
+#### Wiring up cached target dependencies
+Since we will not be recreating `PBXNativeTarget` objects for targets that have not changed, we need to add two new methods that will allow generated targets to reconstruct their target dependencies from the stored `TargetMetadata` objects.
+
+`def add_cached_subproject(metadata, group)` will be added to `Pod::Project`.
+
+`def add_cached_dependency(metadata)` will be added to `Xcodeproj::Project::Object::AbstractTarget` and extended only inside of CocoaPods.
+
+##### Alternative Options
+Instead of caching the necessary information to recreate a `PBXTargetDependency` object, another option would be just opening the project on disk that contains the correct target dependency. The concern for this approach is the performance cost of opening a `Pod::Project` object, especially for changes to aggregate targets since that would require opening 300+ projects for larger workspaces.
 
 #### `ProjectCacheAnalyzer`
 We can utilize the cache models we created to analyze which targets and their associate projects need to be regenerated. The `ProjectCacheAnalyzer` takes an instance of a `ProjectInstallationCache` and outputs a `ProjectCacheAnalysisResult` object that will be used by the project generation step.
@@ -237,16 +247,6 @@ end
 
 
 The `ProjectCacheAnalyzer` will be created by the `Pod::Installer` class and run right before project generation. The project generation step is where we will see a huge performance improvement from our caching since it will only be given the subset of pod targets and their associate projects that need to be generated, instead of generating all targets for every installation.
-
-#### Wiring up cached target dependencies
-Since we will not be creating `PBXNativeTarget` objects for targets that have not changed, we need to add two new methods that will allow targets that have been regenerated to recreate their target dependencies from `TargetMetadata` objects.
-
-`def add_cached_subproject(metadata, group)` will be added to `Pod::Project`.
-
-`def add_cached_dependency(metadata)` will be added to `Xcodeproj::Project::Object::AbstractTarget` and extended only inside of CocoaPods.
-
-##### Alternative Options
-Instead of caching the necessary information to recreate a `PBXTargetDependency` object, another option would be just opening the project on disk that contains the correct target dependency. The concern for this approach is the performance cost of opening a `Pod::Project` object, especially for changes to aggregate targets since that would require opening 300+ projects for larger workspaces.
 
 ## Backwards Compatibility
 Using incremental installation means that only a subset of the projects that need to be regenerated will be created by the project generator. This means that the properties `pods_project` and `pod_target_subprojects` on `Pod::Installer` won't necessarily exist since they may not be created. As a result, we will add a new property `generated_projects` that will hold a list of all the projects that were generated and post-install hooks should start using this new property to map over properties they care about in the projects.
