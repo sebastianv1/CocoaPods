@@ -11,14 +11,14 @@
 ## Design (Incremental Pod Installation)
 
 ### Installation Option and Flags
-Enabling incremental pod installation will be gated by the installation option `incremental_installation` that depends on `generate_multiple_pod_projects` also being enabled. This is necessary because there is no performance improvement without `generate_multiple_pod_projects` enabled since the single pods project will regenerate `Pods.xcodeproj` entirely for every installation. We will raise an exception in the `PodfileValidator` class if this condition isn't met.
+Enabling incremental pod installation will be gated by the installation option `incremental_installation` that depends on `generate_multiple_pod_projects` also being enabled. We want to enforce this constraint because incremental installation will optimize the project generation step by only regenerating the individual Xcode projects for targets that have changed.
 
 In addition to the installation option, we will add a new installation flag `--clean-install` that can be used to ignore the contents of the cache and force a complete installation.
 
 ### Project Caching
 In order to enable _only_ regenerating the Xcode project files for pod targets that have changed since the previous installation, we will create a cache inside the sandbox directory storing:
-1. A target cache key per target used to determine if it is dirty.
-2. Target metadata used to recreate itself as a target dependency for parent targets.
+1. A __target cache key__ per target used to determine if it is dirty.
+2. __Target metadata__ used to recreate itself as a target dependency for parent targets.
 
 The cache will exist under the `Pods/.project_cache` directory and store files for the two cases listed above (`installation_cache` and `metadata_cache`) in addition to a `cache_version` file that is stored for backwards compatibility if changes are made in the future to the structure of the cache that would require flushing its contents.
 
@@ -47,7 +47,7 @@ For each `AggregateTarget`, we can mark it as dirty based on a difference in the
 Each `AggregateTarget` will store in the `installation_cache` file:
 - Checksum of build settings.
 
-___Note on storing the list of files__: There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store them as an array. Storing the list of files as an array seems better since it allows us to output the files causing a project to be regenerated to be used by the `--verbose` flag and local testing. In addition, we will be comparing `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation to compute the checksum from the list of files on the `PodTarget` object to compare against the cached checksum. For these reasons, storing the set of files as an array seems to be the better option without a performance hit._
+___Note on storing the list of files__: There are a couple ways we could go about storing the set of files: create a unique checksum from the list of files, or directly store them as an array. Storing the list of files as an array seems better since it allows us to output the diff of files that caused a target to be regenerated. This diff can be used by the `--verbose` flag and local testing. In addition, we will be comparing `TargetCacheKey` objects constructed from a `PodTarget` object against the equivalent target parsed from the cache; thus, we will already have to perform a linear operation to compute the checksum from the list of files on the `PodTarget` to compare against the cached checksum. For these reasons, storing the set of files as an array seems to be the better option without a performance hit._
 
 The `TargetCacheKey` public interface will be:
 
