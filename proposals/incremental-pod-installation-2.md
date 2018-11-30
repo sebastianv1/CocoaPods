@@ -41,8 +41,6 @@ Each `PodTarget` will store in the `installation_cache` file:
 - List of all files tracked (exclusive to local pods).
 - Checkout options (if they exist for the pod).
 
----
-
 For each `AggregateTarget`, we can mark it as dirty solely based on a difference in the build settings. This is because we only care about a difference in the set of its pod or the way it's built, which is encapsulated in the aggregate target's build settings.
 
 Each `AggregateTarget` will store in the `installation_cache` file:
@@ -164,11 +162,11 @@ Similar to `ProjectInstallationCache`, the `ProjectMetadataCache` object is resp
 It's public interface will be:
 ```ruby
 class ProjectMetadataCache
-	# @return [Hash<String, TargetMetadata>]
-	attr_reader :target_by_metadata
+	# @return [Hash<String, TargetMetadata>] Hash of target by metadata. 
+	attr_reader :metadata_by_target_label
 	
-	# @param [Hash<String, TargetMetadata>] @see #target_by_metadata
-	def initialize(target_by_metadata)
+	# @param [Hash<String, TargetMetadata>] metadata_by_target_label @see #metadata_by_target_label
+	def initialize(metadata_by_target_label)
 	
 	def save_as(path)
 	
@@ -181,7 +179,6 @@ class ProjectMetadataCache
 	def self.from_file(path)
 end
 ```
-
 
 #### `ProjectCacheAnalyzer`
 We can utilize the cache models we created to analyze which targets and their associate projects need to be regenerated. The `ProjectCacheAnalyzer` takes an instance of a `ProjectInstallationCache` and outputs a `ProjectCacheAnalysisResult` object that will be used by the project generation step.
@@ -239,20 +236,20 @@ end
   ```
 
 
-The `ProjectCacheAnalyzer` will be created by the `Pod::Installer` class and run right before project generation. The project generation step is where we will see a huge performance improvement from our caching since it will only be given the subset of pod targets that need to be generated, instead of generating all targets for every installation.
+The `ProjectCacheAnalyzer` will be created by the `Pod::Installer` class and run right before project generation. The project generation step is where we will see a huge performance improvement from our caching since it will only be given the subset of pod targets and their associate projects that need to be generated, instead of generating all targets for every installation.
 
 #### Wiring up cached target dependencies
-Since we will not be creating `PBXNativeTarget` objects for targets that have not changed, we need to add two new methods that will allow us to recreate these target dependencies from the `TargetMetadata` object for parent targets that were regenerated.
+Since we will not be creating `PBXNativeTarget` objects for targets that have not changed, we need to add two new methods that will allow parent targets to recreate their target dependencies from `TargetMetadata` objects.
 
 `def add_cached_subproject(metadata, group)` will be added to `Pod::Project`.
 
-`def add_cached_dependency(metadata)` will be added to the `Xcodeproj::Project::Object::AbstractTarget` and extended only inside of CocoaPods.
+`def add_cached_dependency(metadata)` will be added to `Xcodeproj::Project::Object::AbstractTarget` and extended only inside of CocoaPods.
 
 ##### Alternative Options
-Instead of caching the necessary information to recreate a `PBXTargetDependency` object, another option would be just opening the project on disk that contains the correct target dependency. The concern for this approach is the performance cost of opening a `Pod::Project` object, especially for changes to aggregate targets since that could involve opening 300+ projects for larger apps.
+Instead of caching the necessary information to recreate a `PBXTargetDependency` object, another option would be just opening the project on disk that contains the correct target dependency. The concern for this approach is the performance cost of opening a `Pod::Project` object, especially for changes to aggregate targets since that would require opening 300+ projects for larger workspaces.
 
 ## Backwards Compatibility
-Using incremental installation means that only a subset of the projects that need to be regenerated will be created by the project generator. This means that the properties `pods_project` and `pod_target_subprojects` on `Pod::Installer` won't necessarily exist since they may not be created. As a result, we will add a new property `generated_projects` that will hold a list of all the projects that were generated, and post-install hooks should start using this new property to map over properties they care about in the projects.
+Using incremental installation means that only a subset of the projects that need to be regenerated will be created by the project generator. This means that the properties `pods_project` and `pod_target_subprojects` on `Pod::Installer` won't necessarily exist since they may not be created. As a result, we will add a new property `generated_projects` that will hold a list of all the projects that were generated and post-install hooks should start using this new property to map over properties they care about in the projects.
 
 ## Other Pod Commands that use `installer.rb`
 `pod update` and `pod analyze` will receive the performance improvement of incremental installation, but should not require any changes because all of the changes will happen in the installer, rather than in the install command.
