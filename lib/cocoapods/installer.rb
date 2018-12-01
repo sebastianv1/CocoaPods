@@ -258,13 +258,18 @@ module Pod
         projects_by_pod_targets = pod_project_generation_result.projects_by_pod_targets
         run_podfile_post_install_hooks
 
-        generated_projects = [pods_project] + pod_target_subprojects
         projects_writer = Xcode::PodsProjectWriter.new(sandbox, generated_projects,
                                                        target_installation_results.pod_target_installation_results, installation_options)
         projects_writer.write!
 
-        pods_project_pod_targets = pod_targets - projects_by_pod_targets.values.flatten
-        all_projects_by_pod_targets = { pods_project => pods_project_pod_targets }.merge(projects_by_pod_targets)
+        pods_project_pod_targets =
+          if cache_analysis_result
+            cache_analysis_result.pod_targets_to_generate - projects_by_pod_targets.values.flatten
+          else
+            pod_targets - projects_by_pod_targets.values.flatten
+          end
+        pods_project_by_targets = { pods_project => pods_project_pod_targets } if pods_project
+        all_projects_by_pod_targets = projects_by_pod_targets.merge(pods_project_by_targets)
         all_projects_by_pod_targets.each do |project, pod_targets|
           generator.share_development_pod_schemes(project, development_pod_targets(pod_targets))
         end
