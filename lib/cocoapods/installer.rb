@@ -154,13 +154,9 @@ module Pod
       @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
       object_version = aggregate_targets.map(&:user_project).compact.map { |p| p.object_version.to_i }.min
 
-      cache_analysis = ProjectCacheAnalyzer.new(sandbox, installation_cache,
+      ProjectCacheAnalyzer.new(sandbox, installation_cache,
                                                 analysis_result.all_user_build_configurations, object_version,
                                                 pod_targets, aggregate_targets).analyze
-      @generated_pod_targets = cache_analysis.pod_targets_to_generate
-      @generated_aggregate_targets = cache_analysis.aggregate_targets_to_generate
-
-      cache_analysis
     end
 
     def prepare
@@ -325,9 +321,6 @@ module Pod
     attr_reader :installation_cache
 
     attr_reader :metadata_cache
-
-    attr_reader :generated_pod_targets
-    attr_reader :generated_aggregate_targets
 
     attr_reader :generated_projects
 

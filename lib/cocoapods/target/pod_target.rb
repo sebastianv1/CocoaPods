@@ -137,19 +137,6 @@ module Pod
       end
     end
 
-    def xcconfig_path_for_spec(spec=nil)
-      return xcconfig_path if spec.nil?
-      target_subspec_label = subspec_label(spec)
-      if spec.test_specification?
-        test_type = spec.consumer(platform).test_type
-        xcconfig_path("#{test_type.capitalize}-#{target_subspec_label}")
-      elsif spec.app_specification?
-        xcconfig_path(target_subspec_label)
-      else
-        raise 'Unknown Spec type'
-      end
-    end
-
     def all_files
       files = [
           file_accessors.map(&:vendored_frameworks),
