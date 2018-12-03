@@ -2,18 +2,18 @@ module Pod
   class Installer
     class ProjectInstallationCache
       require 'cocoapods/installer/project_cache/target_cache_key.rb'
-      attr_reader :target_by_cache_key
+      attr_reader :cache_key_by_target_label
       attr_reader :build_configurations
       attr_reader :project_object_version
 
-      def initialize(target_by_cache_key = {}, build_configurations = nil, project_object_version = nil)
-        @target_by_cache_key = target_by_cache_key
+      def initialize(cache_key_by_target_label = {}, build_configurations = nil, project_object_version = nil)
+        @cache_key_by_target_label = cache_key_by_target_label
         @build_configurations = build_configurations
         @project_object_version = project_object_version
       end
 
-      def target_by_cache_key=(target_name_by_cache_key)
-        @target_by_cache_key = target_name_by_cache_key
+      def cache_key_by_target_label=(cache_key_by_target_label)
+        @cache_key_by_target_label = cache_key_by_target_label
       end
 
       def build_configurations=(build_configurations)
@@ -26,8 +26,8 @@ module Pod
 
       def save_as(path)
         Pathname(path).dirname.mkpath
-        cache_key_contents = Hash[target_by_cache_key.map do |name, key|
-          [name, key.to_cache_hash]
+        cache_key_contents = Hash[cache_key_by_target_label.map do |label, key|
+          [label, key.to_cache_hash]
         end]
         contents = { 'CACHE_KEYS' => cache_key_contents }
         contents['BUILD_CONFIGURATIONS'] = build_configurations if build_configurations
@@ -38,12 +38,12 @@ module Pod
       def self.from_file(path)
         return ProjectInstallationCache.new() if !File.exist?(path)
         contents = YAMLHelper.load_file(path)
-        target_by_cache_key = Hash[contents['CACHE_KEYS'].map do |name, key_hash|
+        cache_key_by_target_label = Hash[contents['CACHE_KEYS'].map do |name, key_hash|
           [name, TargetCacheKey.from_cache_hash(key_hash)]
         end]
         project_object_version = contents['OBJECT_VERSION']
         build_configurations = contents['BUILD_CONFIGURATIONS']
-        ProjectInstallationCache.new(target_by_cache_key, build_configurations, project_object_version)
+        ProjectInstallationCache.new(cache_key_by_target_label, build_configurations, project_object_version)
       end
     end
   end

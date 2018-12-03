@@ -2,7 +2,8 @@ workspace 'Examples.xcworkspace'
 platform :ios, '9.0'
 
 install! 'cocoapods',
-	 generate_multiple_pod_projects: true
+	 generate_multiple_pod_projects: true,
+	 incremental_installation: true
 
 target 'MultiXcodeProject' do
   pod 'Coffee', path: 'Coffee/Coffee.podspec'

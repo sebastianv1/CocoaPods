@@ -138,10 +138,6 @@ module Pod
       download_dependencies
       validate_targets
       cache_analysis_result = analyze_project_cache
-      puts "CACHE ANALYSIS:"
-      puts "POD TARGETS:\n#{cache_analysis_result.pod_targets_to_generate} Count: #{cache_analysis_result.pod_targets_to_generate.size}\n-----------"
-      puts "AGGRREGATE TARGETS:\n#{cache_analysis_result.aggregate_targets_to_generate}"
-
       generate_pods_project(cache_analysis_result)
       if installation_options.integrate_targets?
         integrate_user_project
@@ -152,13 +148,18 @@ module Pod
     end
 
     def analyze_project_cache
-      puts "START ANALYSIS"
+      return unless installation_options.incremental_installation
+
       @installation_cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
       @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
       object_version = aggregate_targets.map(&:user_project).compact.map { |p| p.object_version.to_i }.min
-      cache_analysis = ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations, object_version, pod_targets, aggregate_targets).analyze
+
+      cache_analysis = ProjectCacheAnalyzer.new(sandbox, installation_cache,
+                                                analysis_result.all_user_build_configurations, object_version,
+                                                pod_targets, aggregate_targets).analyze
       @generated_pod_targets = cache_analysis.pod_targets_to_generate
       @generated_aggregate_targets = cache_analysis.aggregate_targets_to_generate
+
       cache_analysis
     end
 
@@ -247,7 +248,10 @@ module Pod
             build_configurations
           end
 
-        generator = create_generator(pod_targets_to_generate, aggregate_targets_to_generate, project_build_configurations, project_object_version, installation_options.generate_multiple_pod_projects)
+        generator = create_generator(pod_targets_to_generate, aggregate_targets_to_generate,
+                                     project_build_configurations, project_object_version,
+                                     installation_options.generate_multiple_pod_projects)
+
         pod_project_generation_result = generator.generate!
         @target_installation_results = pod_project_generation_result.target_installation_results
         @pods_project = pod_project_generation_result.project
@@ -277,7 +281,9 @@ module Pod
         end
 
         write_lockfiles
-        update_project_cache(cache_analysis_result, target_installation_results) if cache_analysis_result
+        if cache_analysis_result
+          update_project_cache(cache_analysis_result, target_installation_results)
+        end
       end
     end
 
@@ -709,7 +715,7 @@ module Pod
     end
 
     def update_project_cache(cache_analysis_result, target_installation_results)
-      installation_cache.target_by_cache_key= cache_analysis_result.target_by_cache_key
+      installation_cache.cache_key_by_target_label= cache_analysis_result.cache_key_by_target_label
       installation_cache.project_object_version= cache_analysis_result.project_object_version
       installation_cache.build_configurations= cache_analysis_result.build_configurations
       installation_cache.save_as(sandbox.project_installation_cache_path)
