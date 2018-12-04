@@ -105,6 +105,9 @@ module Pod
     attr_accessor :deployment
     alias_method :deployment?, :deployment
 
+    attr_accessor :clean_install
+    alias_method :clean_install?, :clean_install
+
     #-------------------------------------------------------------------------#
 
     private
@@ -148,7 +151,7 @@ module Pod
     end
 
     def analyze_project_cache
-      return unless installation_options.incremental_installation
+      return if clean_install || !installation_options.incremental_installation
 
       @installation_cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
       @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
