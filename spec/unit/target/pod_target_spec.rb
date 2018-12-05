@@ -494,6 +494,54 @@ module Pod
         end
       end
 
+      describe '#header_mappings' do
+        before do
+          @file_accessor = @pod_target.file_accessors.first
+        end
+
+        it 'returns the correct public header mappings' do
+          headers_sandbox = Pathname.new('BananaLib')
+          headers = [Pathname.new('Banana.h')]
+          mappings = @pod_target.send(:header_mappings, headers_sandbox, @file_accessor, headers)
+          mappings.should == {
+            Pathname.new('BananaLib') => [Pathname.new('Banana.h')],
+          }
+        end
+
+        it 'takes into account the header dir specified in the spec for public headers' do
+          headers_sandbox = Pathname.new('BananaLib')
+          headers = [Pathname.new('Banana.h')]
+          @file_accessor.spec_consumer.stubs(:header_dir).returns('Sub_dir')
+          mappings = @pod_target.send(:header_mappings, headers_sandbox, @file_accessor, headers)
+          mappings.should == {
+            Pathname.new('BananaLib/Sub_dir') => [Pathname.new('Banana.h')],
+          }
+        end
+
+        it 'takes into account the header dir specified in the spec for private headers' do
+          headers_sandbox = Pathname.new('BananaLib')
+          headers = [Pathname.new('Banana.h')]
+          @file_accessor.spec_consumer.stubs(:header_dir).returns('Sub_dir')
+          mappings = @pod_target.send(:header_mappings, headers_sandbox, @file_accessor, headers)
+          mappings.should == {
+            Pathname.new('BananaLib/Sub_dir') => [Pathname.new('Banana.h')],
+          }
+        end
+
+        it 'takes into account the header mappings dir specified in the spec' do
+          headers_sandbox = Pathname.new('BananaLib')
+          header_1 = @file_accessor.root + 'BananaLib/sub_dir/dir_1/banana_1.h'
+          header_2 = @file_accessor.root + 'BananaLib/sub_dir/dir_2/banana_2.h'
+          headers = [header_1, header_2]
+          @file_accessor.spec_consumer.stubs(:header_mappings_dir).returns('BananaLib/sub_dir')
+          mappings = @pod_target.send(:header_mappings, headers_sandbox, @file_accessor, headers)
+          mappings.should == {
+            (headers_sandbox + 'dir_1') => [header_1],
+            (headers_sandbox + 'dir_2') => [header_2],
+          }
+        end
+      end
+
       describe 'With frameworks' do
         before do
           @pod_target = fixture_pod_target('orange-framework/OrangeFramework.podspec', true)

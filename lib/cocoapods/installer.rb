@@ -30,16 +30,17 @@ module Pod
   # source control.
   #
   class Installer
-    autoload :Analyzer,                   'cocoapods/installer/analyzer'
-    autoload :InstallationOptions,        'cocoapods/installer/installation_options'
-    autoload :PostInstallHooksContext,    'cocoapods/installer/post_install_hooks_context'
-    autoload :PreInstallHooksContext,     'cocoapods/installer/pre_install_hooks_context'
-    autoload :SourceProviderHooksContext, 'cocoapods/installer/source_provider_hooks_context'
-    autoload :PodfileValidator,           'cocoapods/installer/podfile_validator'
-    autoload :PodSourceInstaller,         'cocoapods/installer/pod_source_installer'
-    autoload :PodSourcePreparer,          'cocoapods/installer/pod_source_preparer'
-    autoload :UserProjectIntegrator,      'cocoapods/installer/user_project_integrator'
-    autoload :Xcode,                      'cocoapods/installer/xcode'
+    autoload :Analyzer,                     'cocoapods/installer/analyzer'
+    autoload :InstallationOptions,          'cocoapods/installer/installation_options'
+    autoload :PostInstallHooksContext,      'cocoapods/installer/post_install_hooks_context'
+    autoload :PreInstallHooksContext,       'cocoapods/installer/pre_install_hooks_context'
+    autoload :SourceProviderHooksContext,   'cocoapods/installer/source_provider_hooks_context'
+    autoload :PodfileValidator,             'cocoapods/installer/podfile_validator'
+    autoload :PodSourceInstaller,           'cocoapods/installer/pod_source_installer'
+    autoload :PodSourcePreparer,            'cocoapods/installer/pod_source_preparer'
+    autoload :UserProjectIntegrator,        'cocoapods/installer/user_project_integrator'
+    autoload :Xcode,                        'cocoapods/installer/xcode'
+    autoload :SandboxHeaderPathsInstaller,  'cocoapods/installer/sandbox_header_paths_installer'
     autoload :ProjectCacheAnalyzer,       'cocoapods/installer/project_cache/project_cache_analyzer'
     autoload :ProjectInstallationCache,   'cocoapods/installer/project_cache/project_installation_cache'
     autoload :ProjectMetadataCache,       'cocoapods/installer/project_cache/project_metadata_cache'
@@ -141,7 +142,7 @@ module Pod
       resolve_dependencies
       download_dependencies
       validate_targets
-      install_sandbox_references
+      stage_sandbox(sandbox, pod_targets, aggregate_targets)
       cache_analysis_result = analyze_project_cache
       generate_pods_project(cache_analysis_result)
       if installation_options.integrate_targets?
@@ -195,7 +196,6 @@ module Pod
       UI.section 'Analyzing dependencies' do
         analyze(analyzer)
         validate_build_configurations
-        clean_sandbox
       end
 
       UI.section 'Verifying no changes' do
@@ -212,6 +212,13 @@ module Pod
         run_podfile_pre_install_hooks
         clean_pod_sources
       end
+    end
+
+    # Stages the sandbox after analysis.
+    #
+    def stage_sandbox(sandbox, pod_targets, aggregate_targets)
+      SandboxHeaderPathsInstaller.new(sandbox, pod_targets).install
+      clean_sandbox(pod_targets, aggregate_targets)
     end
 
     #-------------------------------------------------------------------------#
@@ -385,13 +392,11 @@ module Pod
     #         regenerated from scratch and any file which might not be
     #         overwritten.
     #
-    # @todo   [#247] Clean the headers of only the pods to install.
-    #
-    def clean_sandbox
-      sandbox.public_headers.implode!
+    def clean_sandbox(pod_targets, aggregate_targets)
       target_support_dirs = sandbox.target_support_files_root.children.select(&:directory?)
       pod_targets.each do |pod_target|
         pod_target.build_headers.implode!
+        sandbox.public_headers.implode_path!(pod_target.headers_sandbox)
         target_support_dirs.delete(pod_target.support_files_dir)
       end
 

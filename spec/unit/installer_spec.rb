@@ -62,6 +62,8 @@ module Pod
         @installer.stubs(:resolve_dependencies)
         @installer.stubs(:download_dependencies)
         @installer.stubs(:validate_targets)
+        @installer.stubs(:stage_sandbox)
+        @installer.stubs(:clean_sandbox)
         @installer.stubs(:generate_pods_project)
         @installer.stubs(:integrate_user_project)
         @installer.stubs(:run_plugins_post_install_hooks)
@@ -382,18 +384,18 @@ module Pod
 
         it 'cleans the header stores' do
           FileUtils.mkdir_p(config.sandbox.target_support_files_root)
-          config.sandbox.public_headers.expects(:implode!)
           @installer.pod_targets.each do |pods_target|
             pods_target.build_headers.expects(:implode!)
+            config.sandbox.public_headers.expects(:implode_path!).with(pods_target.headers_sandbox)
           end
-          @installer.send(:clean_sandbox)
+          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
         end
 
         it 'deletes the sources of the removed Pods' do
           FileUtils.mkdir_p(config.sandbox.target_support_files_root)
           @analysis_result.sandbox_state.add_name('Deleted-Pod', :deleted)
           config.sandbox.expects(:clean_pod).with('Deleted-Pod')
-          @installer.send(:clean_sandbox)
+          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
         end
 
         it 'deletes the target support file dirs of the removed pod targets' do
@@ -403,7 +405,7 @@ module Pod
             'Spec',
           ]
           @installer.stubs(:pod_targets).returns([])
-          @installer.send(:clean_sandbox)
+          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
           config.sandbox.target_support_files_root.children.map(&:basename).map(&:to_s).should.be.empty
         end
 
@@ -413,7 +415,7 @@ module Pod
           config.sandbox.target_support_files_root.children.map(&:basename).map(&:to_s).should == [
             'Spec',
           ]
-          @installer.send(:clean_sandbox)
+          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
           config.sandbox.target_support_files_root.children.map(&:basename).map(&:to_s).should == [
             'Spec',
           ]
@@ -430,7 +432,7 @@ module Pod
             'Pods-MyApp',
           ]
           @installer.stubs(:aggregate_targets).returns([])
-          @installer.send(:clean_sandbox)
+          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
           config.sandbox.target_support_files_root.children.map(&:basename).map(&:to_s).should.be.empty
         end
 
@@ -444,7 +446,7 @@ module Pod
           config.sandbox.target_support_files_root.children.map(&:basename).map(&:to_s).should == [
             'Pods-MyApp',
           ]
-          @installer.send(:clean_sandbox)
+          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
           config.sandbox.target_support_files_root.children.map(&:basename).map(&:to_s).should == [
             'Pods-MyApp',
           ]
