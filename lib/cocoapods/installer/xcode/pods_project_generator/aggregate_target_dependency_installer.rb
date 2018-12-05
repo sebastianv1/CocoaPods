@@ -24,11 +24,11 @@ module Pod
             configure_app_extension_api_only_to_native_target(aggregate_native_target) if is_app_extension
             # Wire up dependencies that are part of inherit search paths for this aggregate target.
             aggregate_target.search_paths_aggregate_targets.each do |search_paths_target|
-              aggregate_native_target.add_dependency(aggregate_target_installation_results_hash[search_paths_target.name].native_target)
+              aggregate_native_target.add_dependency(aggregate_target_installation_results[search_paths_target.name].native_target)
             end
             # Wire up all pod target dependencies to aggregate target.
             aggregate_target.pod_targets.each do |pod_target|
-              if pod_target_installation_result = pod_target_installation_result[pod_target.name]
+              if pod_target_installation_result = pod_target_installation_results[pod_target.name]
                 pod_target_native_target = pod_target_installation_result.native_target
                 aggregate_native_target.add_dependency(pod_target_native_target)
                 configure_app_extension_api_only_to_native_target(pod_target_native_target) if is_app_extension

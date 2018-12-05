@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		01B696AD865E063BAF9EB862 /* libPods-MultiXcodeProject.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 163FE98AA3B750B9B89EF895 /* libPods-MultiXcodeProject.a */; };
 		0C9392FA471BD1270212CECE /* libPods-MultiXcodeProjectUITests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A3DBFB13B2074ACE4B5A2C54 /* libPods-MultiXcodeProjectUITests.a */; };
+		54EB62892E4EA44FEC955CCE /* libPods-MultiXcodeProjFrameworks.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B905C0E9D3F753EE858D0D8E /* libPods-MultiXcodeProjFrameworks.a */; };
 		7B492605AEECF8D8B85DC9F1 /* libPods-MultiXcodeProjectTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B7E00BAAA562B8F375611EB /* libPods-MultiXcodeProjectTests.a */; };
-		D5A855DEB9097E2776DBC7FD /* Pods_MultiXcodeProjFrameworks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A5E4FAF9973EEC468A8CCA55 /* Pods_MultiXcodeProjFrameworks.framework */; };
 		DC3AFF692193A31C0056E004 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DC3AFF682193A31C0056E004 /* AppDelegate.m */; };
 		DC3AFF6C2193A31C0056E004 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DC3AFF6B2193A31C0056E004 /* ViewController.m */; };
 		DC3AFF6F2193A31C0056E004 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DC3AFF6D2193A31C0056E004 /* Main.storyboard */; };
@@ -51,8 +51,8 @@
 		612D4E8A6FD130B27333F6FB /* Pods-MultiXcodeProjectTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiXcodeProjectTests.release.xcconfig"; path = "Target Support Files/Pods-MultiXcodeProjectTests/Pods-MultiXcodeProjectTests.release.xcconfig"; sourceTree = "<group>"; };
 		7F28CE440DEDFC8414FC65CF /* Pods-MultiXcodeProject.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiXcodeProject.debug.xcconfig"; path = "Target Support Files/Pods-MultiXcodeProject/Pods-MultiXcodeProject.debug.xcconfig"; sourceTree = "<group>"; };
 		A3DBFB13B2074ACE4B5A2C54 /* libPods-MultiXcodeProjectUITests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MultiXcodeProjectUITests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A5E4FAF9973EEC468A8CCA55 /* Pods_MultiXcodeProjFrameworks.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MultiXcodeProjFrameworks.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A601A49591DA93FEFE7CA6B0 /* Pods-MultiXcodeProjFrameworks.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiXcodeProjFrameworks.release.xcconfig"; path = "Target Support Files/Pods-MultiXcodeProjFrameworks/Pods-MultiXcodeProjFrameworks.release.xcconfig"; sourceTree = "<group>"; };
+		B905C0E9D3F753EE858D0D8E /* libPods-MultiXcodeProjFrameworks.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MultiXcodeProjFrameworks.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CBF4FC7DA4A0088207878891 /* Pods-MultiXcodeProject.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiXcodeProject.release.xcconfig"; path = "Target Support Files/Pods-MultiXcodeProject/Pods-MultiXcodeProject.release.xcconfig"; sourceTree = "<group>"; };
 		CE51813E750C2951D45C74D7 /* Pods-MultiXcodeProjectUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MultiXcodeProjectUITests.debug.xcconfig"; path = "Target Support Files/Pods-MultiXcodeProjectUITests/Pods-MultiXcodeProjectUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		DC3AFF642193A31C0056E004 /* MultiXcodeProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MultiXcodeProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -114,7 +114,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D5A855DEB9097E2776DBC7FD /* Pods_MultiXcodeProjFrameworks.framework in Frameworks */,
+				54EB62892E4EA44FEC955CCE /* libPods-MultiXcodeProjFrameworks.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,7 +127,7 @@
 				163FE98AA3B750B9B89EF895 /* libPods-MultiXcodeProject.a */,
 				0B7E00BAAA562B8F375611EB /* libPods-MultiXcodeProjectTests.a */,
 				A3DBFB13B2074ACE4B5A2C54 /* libPods-MultiXcodeProjectUITests.a */,
-				A5E4FAF9973EEC468A8CCA55 /* Pods_MultiXcodeProjFrameworks.framework */,
+				B905C0E9D3F753EE858D0D8E /* libPods-MultiXcodeProjFrameworks.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -288,7 +288,6 @@
 				DCB15FB921968B360015F6E0 /* Sources */,
 				DCB15FBA21968B360015F6E0 /* Frameworks */,
 				DCB15FBB21968B360015F6E0 /* Resources */,
-				665D025DC993D9343244C799 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -383,23 +382,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		665D025DC993D9343244C799 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-MultiXcodeProjFrameworks/Pods-MultiXcodeProjFrameworks-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-MultiXcodeProjFrameworks/Pods-MultiXcodeProjFrameworks-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MultiXcodeProjFrameworks/Pods-MultiXcodeProjFrameworks-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		81CBBE3423DB5C6F31CCB9CC /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;

@@ -43,6 +43,7 @@ module Pod
     autoload :ProjectCacheAnalyzer,       'cocoapods/installer/project_cache/project_cache_analyzer'
     autoload :ProjectInstallationCache,   'cocoapods/installer/project_cache/project_installation_cache'
     autoload :ProjectMetadataCache,       'cocoapods/installer/project_cache/project_metadata_cache'
+    autoload :SandboxHeaderLinker,        'cocoapods/installer/xcode/sandbox_header_linker'
 
     include Config::Mixin
 
@@ -140,6 +141,7 @@ module Pod
       resolve_dependencies
       download_dependencies
       validate_targets
+      install_sandbox_references
       cache_analysis_result = analyze_project_cache
       generate_pods_project(cache_analysis_result)
       if installation_options.integrate_targets?
@@ -150,6 +152,10 @@ module Pod
       perform_post_install_actions
     end
 
+    def install_sandbox_references
+      SandboxHeaderLinker.new(sandbox, pod_targets).link!
+    end
+
     def analyze_project_cache
       return if clean_install || !installation_options.incremental_installation
 
@@ -157,9 +163,8 @@ module Pod
       @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
       object_version = aggregate_targets.map(&:user_project).compact.map { |p| p.object_version.to_i }.min
 
-      ProjectCacheAnalyzer.new(sandbox, installation_cache,
-                                                analysis_result.all_user_build_configurations, object_version,
-                                                pod_targets, aggregate_targets).analyze
+      ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations,
+                               object_version, pod_targets, aggregate_targets).analyze
     end
 
     def prepare
@@ -229,10 +234,10 @@ module Pod
       UI.section 'Generating Pods project' do
         pod_targets_to_generate = cache_analysis_result ? cache_analysis_result.pod_targets_to_generate : pod_targets
         aggregate_targets_to_generate =
-          if cache_analysis_result && cache_analysis_result.aggregate_targets_to_generate.size > 0
-            aggregate_targets
+          if cache_analysis_result
+            cache_analysis_result.aggregate_targets_to_generate.size > 0 ? aggregate_targets : []
           else
-            []
+            aggregate_targets
           end
         project_object_version =
           if cache_analysis_result
@@ -244,8 +249,10 @@ module Pod
           if cache_analysis_result
             cache_analysis_result.build_configurations
           else
-            build_configurations
+            analysis_result.all_user_build_configurations
           end
+        puts "ME POD TARGETS: #{pod_targets_to_generate}"
+        puts "ME AGGREGATE TARGETS: #{aggregate_targets_to_generate}"
 
         generator = create_generator(pod_targets_to_generate, aggregate_targets_to_generate,
                                      project_build_configurations, project_object_version,
