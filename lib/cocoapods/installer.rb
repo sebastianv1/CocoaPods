@@ -144,6 +144,8 @@ module Pod
       validate_targets
       stage_sandbox(sandbox, pod_targets, aggregate_targets)
       cache_analysis_result = analyze_project_cache
+      clean_sandbox(cache_analysis_result.pod_targets_to_generate,
+                    cache_analysis_result.aggregate_targets_to_generate)
       generate_pods_project(cache_analysis_result)
       if installation_options.integrate_targets?
         integrate_user_project
@@ -218,7 +220,6 @@ module Pod
     #
     def stage_sandbox(sandbox, pod_targets, aggregate_targets)
       SandboxHeaderPathsInstaller.new(sandbox, pod_targets).install
-      clean_sandbox(pod_targets, aggregate_targets)
     end
 
     #-------------------------------------------------------------------------#
@@ -395,16 +396,15 @@ module Pod
     def clean_sandbox(pod_targets, aggregate_targets)
       target_support_dirs = sandbox.target_support_files_root.children.select(&:directory?)
       pod_targets.each do |pod_target|
-        pod_target.build_headers.implode!
+        pod_target.build_headers.implode_path!(pod_target.headers_sandbox)
         sandbox.public_headers.implode_path!(pod_target.headers_sandbox)
-        target_support_dirs.delete(pod_target.support_files_dir)
+        FileUtils.rm_rf(pod_target.support_files_dir)
       end
 
       aggregate_targets.each do |aggregate_target|
+        FileUtils.rm_rf(aggregate_target.support_files_dir)
         target_support_dirs.delete(aggregate_target.support_files_dir)
       end
-
-      target_support_dirs.each { |dir| FileUtils.rm_rf(dir) }
 
       unless sandbox_state.deleted.empty?
         title_options = { :verbose_prefix => '-> '.red }

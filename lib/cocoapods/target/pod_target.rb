@@ -750,6 +750,8 @@ module Pod
       Hash[app_specs.map do |app_spec|
         [app_spec.name, BuildSettings::PodTargetSettings.new(self, app_spec)]
       end]
+    end
+
     # Computes the destination sub-directory in the sandbox
     #
     # @param  [Pathname] headers_sandbox

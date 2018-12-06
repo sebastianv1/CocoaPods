@@ -74,6 +74,14 @@ module Pod
         root.rmtree if root.exist?
       end
 
+      # Removes the entire root directory.
+      #
+      # @return [void]
+      #
+      def implode_path!(path)
+        root.rmtree if root.exist?
+      end
+
       # Removes the directory at the given path relative to the root.
       #
       # @param [Pathname] path

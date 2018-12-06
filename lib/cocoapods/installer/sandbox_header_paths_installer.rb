@@ -21,7 +21,7 @@ module Pod
         @sandbox = sandbox
       end
 
-      def install!
+      def install
         # Link all pod target header search paths into the HeaderStore.
         pod_targets.each do |pod_target|
           next if pod_target.build_as_framework? && pod_target.should_build?
