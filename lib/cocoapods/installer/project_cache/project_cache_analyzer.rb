@@ -9,15 +9,18 @@ module Pod
       attr_reader :sandbox
       attr_reader :build_configurations
       attr_reader :project_object_version
+      attr_reader :clean_install
 
 
-      def initialize(sandbox, cache, build_configurations, project_object_version, pod_targets, aggregate_targets)
+      def initialize(sandbox, cache, build_configurations, project_object_version, pod_targets, aggregate_targets,
+                     clean_install: false)
         @sandbox = sandbox
         @cache = cache
         @build_configurations = build_configurations
         @pod_targets = pod_targets
         @aggregate_targets = aggregate_targets
         @project_object_version = project_object_version
+        @clean_install = clean_install
       end
 
       def analyze
@@ -35,7 +38,7 @@ module Pod
         end]
 
         # Bail out early since these properties affect all targets and their associate projects.
-        if cache.build_configurations != build_configurations || cache.project_object_version != project_object_version
+        if cache.build_configurations != build_configurations || cache.project_object_version != project_object_version || clean_install
           return ProjectCacheAnalysisResult.new(pod_targets, aggregate_targets, cache_key_by_target_label,
                                                 build_configurations, project_object_version)
         end

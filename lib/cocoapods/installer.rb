@@ -164,7 +164,7 @@ module Pod
         @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
 
         ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations,
-                                 object_version, pod_targets, aggregate_targets).analyze
+                                 object_version, pod_targets, aggregate_targets, clean_install: clean_install).analyze
       end
     end
 
