@@ -378,7 +378,7 @@ module Pod
           @pod_targets = [PodTarget.new(config.sandbox, false, {}, [], Platform.ios, [@spec],
                                         [fixture_target_definition], nil)]
           @installer.stubs(:analysis_result).returns(@analysis_result)
-          @installer.stubs(:pod_targets).returns(@pod_targets)
+          @installer.stubs(:pod_targets).returns([@pod_targets])
           @installer.stubs(:aggregate_targets).returns([])
         end
 

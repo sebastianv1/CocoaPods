@@ -1,6 +1,6 @@
 module Pod
   class Installer
-    require 'cocoapods/installer/project_cache/project_cache_analysis_result.rb'
+    require 'cocoapods/installer/project_cache/project_cache_analysis_result'
 
     class ProjectCacheAnalyzer
       attr_reader :pod_targets

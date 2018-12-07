@@ -1,6 +1,7 @@
 module Pod
   class Installer
     class TargetCacheKey
+
       require 'cocoapods/target/pod_target.rb'
       require 'cocoapods/target/aggregate_target.rb'
       require 'digest'
@@ -19,18 +20,19 @@ module Pod
         else
           case type
           when :pod_target
-            return :project if other.hash.keys.size - hash.keys.size != 0
+            return :project if (other.hash.keys - hash.keys).any?
             return :project if other.hash['CHECKSUM'] != hash['CHECKSUM']
-            return :project if other.hash['SPECS'].size - hash['SPECS'].size != 0
-            return :project if hash['FILES'] && other.hash['FILES'] != hash['FILES']
+            return :project if other.hash['SPECS'] != hash['SPECS']
+            return :project if other.hash['FILES'] != hash['FILES']
           end
 
           this_build_settings = hash['BUILD_SETTINGS']
           other_build_settings = other.hash['BUILD_SETTINGS']
-          this_build_settings.each do |key, settings_checksum|
-            return :project if other_build_settings[key].nil?
-            return :project if settings_checksum != other_build_settings[key]
-          end
+          return :project if this_build_settings != other_build_settings
+
+          this_checkout_options = hash['CHECKOUT_OPTIONS']
+          other_checkout_options = other.hash['CHECKOUT_OPTIONS']
+          return :project if this_checkout_options != other_checkout_options
 
           :none
         end
@@ -74,9 +76,7 @@ module Pod
           build_settings[configuration] = Digest::MD5.hexdigest(aggregate_target.build_settings(configuration).xcconfig.to_s)
         end
 
-        TargetCacheKey.new(:aggregate, {
-            'BUILD_SETTINGS' => build_settings
-        })
+        TargetCacheKey.new(:aggregate, {'BUILD_SETTINGS' => build_settings })
       end
     end
   end

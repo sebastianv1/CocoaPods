@@ -1,7 +1,7 @@
 module Pod
   class Installer
     class ProjectInstallationCache
-      require 'cocoapods/installer/project_cache/target_cache_key.rb'
+      require 'cocoapods/installer/project_cache/target_cache_key'
       attr_reader :cache_key_by_target_label
       attr_reader :build_configurations
       attr_reader :project_object_version
