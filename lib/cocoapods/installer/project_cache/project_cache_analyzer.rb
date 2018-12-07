@@ -21,7 +21,6 @@ module Pod
       end
 
       def analyze
-        puts "ANALZYING!"
         target_by_label = Hash[(pod_targets + aggregate_targets).map { |target| [target.label, target] }]
         cache_key_by_target_label = Hash[target_by_label.map do |label, target|
           if target.is_a?(PodTarget)
@@ -59,8 +58,15 @@ module Pod
         changed_aggregate_targets = changed_targets.select { |target| target.is_a?(AggregateTarget) }
 
         pod_targets_to_generate = changed_pod_targets + added_pod_targets
-        aggregate_target_to_generate = changed_aggregate_targets + added_aggregate_targets
-        puts "POD TARGETS: #{pod_targets_to_generate}\n AGGREGATE TARGETS:#{aggregate_target_to_generate}\n"
+        # NOTE: We do this because all aggregate targets go into Pods.xcodeproj.
+        #
+        aggregate_target_to_generate =
+            if !(changed_aggregate_targets + added_aggregate_targets).empty?
+              aggregate_targets
+            else
+              []
+            end
+
         ProjectCacheAnalysisResult.new(pod_targets_to_generate, aggregate_target_to_generate, cache_key_by_target_label,
                                        build_configurations, project_object_version)
       end

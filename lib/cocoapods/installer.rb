@@ -46,6 +46,7 @@ module Pod
     autoload :ProjectInstallationCache,   'cocoapods/installer/project_cache/project_installation_cache'
     autoload :ProjectMetadataCache,       'cocoapods/installer/project_cache/project_metadata_cache'
     autoload :SandboxHeaderLinker,        'cocoapods/installer/xcode/sandbox_header_linker'
+    autoload :ProjectCacheAnalysisResult, 'cocoapods/installer/project_cache/project_cache_analysis_result'
 
     include Config::Mixin
 
@@ -143,11 +144,7 @@ module Pod
       resolve_dependencies
       download_dependencies
       validate_targets
-      stage_sandbox(sandbox, pod_targets, aggregate_targets)
-      cache_analysis_result = analyze_project_cache
-      clean_sandbox(cache_analysis_result.pod_targets_to_generate,
-                    cache_analysis_result.aggregate_targets_to_generate)
-      generate_pods_project(cache_analysis_result)
+      generate_pods_project
       if installation_options.integrate_targets?
         integrate_user_project
       else
@@ -156,19 +153,19 @@ module Pod
       perform_post_install_actions
     end
 
-    def install_sandbox_references
-      SandboxHeaderLinker.new(sandbox, pod_targets).link!
-    end
-
     def analyze_project_cache
-      return if clean_install || !installation_options.incremental_installation
-
-      @installation_cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
-      @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
       object_version = aggregate_targets.map(&:user_project).compact.map { |p| p.object_version.to_i }.min
+      if !installation_options.incremental_installation
+        # Run entire installation.
+        ProjectCacheAnalysisResult.new(pod_targets, aggregate_targets, {},
+                                       analysis_result.all_user_build_configurations, object_version)
+      else
+        @installation_cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
+        @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
 
-      ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations,
-                               object_version, pod_targets, aggregate_targets).analyze
+        ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations,
+                                 object_version, pod_targets, aggregate_targets).analyze
+      end
     end
 
     def prepare
@@ -251,38 +248,27 @@ module Pod
     #
     def generate_pods_project
       stage_sandbox(sandbox, pod_targets)
-      clean_sandbox(pod_targets, aggregate_targets)
-      create_and_save_projects
+
+      cache_analysis_result = analyze_project_cache
+      pod_targets_to_generate = cache_analysis_result.pod_targets_to_generate
+      aggregate_targets_to_generate = cache_analysis_result.aggregate_targets_to_generate
+
+      clean_sandbox(pod_targets_to_generate, aggregate_targets_to_generate)
+
+      create_and_save_projects(pod_targets_to_generate, aggregate_targets_to_generate,
+                               cache_analysis_result.build_configurations, cache_analysis_result.project_object_version)
+      update_project_cache(cache_analysis_result, target_installation_results)
       write_lockfiles
       SandboxDirCleaner.new(sandbox, pod_targets, aggregate_targets).clean!
     end
 
-    def create_and_save_projects(generator = create_generator(installation_options.generate_multiple_pod_projects))
+    def create_and_save_projects(pod_targets_to_generate, aggregate_targets_to_generate, build_configurations, project_object_version)
       UI.section 'Generating Pods project' do
-        pod_targets_to_generate = cache_analysis_result ? cache_analysis_result.pod_targets_to_generate : pod_targets
-        aggregate_targets_to_generate =
-          if cache_analysis_result
-            cache_analysis_result.aggregate_targets_to_generate.size > 0 ? aggregate_targets : []
-          else
-            aggregate_targets
-          end
-        project_object_version =
-          if cache_analysis_result
-            cache_analysis_result.project_object_version
-          else
-            aggregate_targets.map(&:user_project).compact.map { |p| p.object_version.to_i }.min
-          end
-        project_build_configurations =
-          if cache_analysis_result
-            cache_analysis_result.build_configurations
-          else
-            analysis_result.all_user_build_configurations
-          end
-        puts "ME POD TARGETS: #{pod_targets_to_generate}"
-        puts "ME AGGREGATE TARGETS: #{aggregate_targets_to_generate}"
+        puts "POD TARGETS: #{pod_targets_to_generate}"
+        puts "AGGREGATE TARGETS: #{aggregate_targets_to_generate}"
 
         generator = create_generator(pod_targets_to_generate, aggregate_targets_to_generate,
-                                     project_build_configurations, project_object_version,
+                                     build_configurations, project_object_version,
                                      installation_options.generate_multiple_pod_projects)
 
         pod_project_generation_result = generator.generate!
@@ -299,21 +285,13 @@ module Pod
                                                        target_installation_results.pod_target_installation_results, installation_options)
         projects_writer.write!
 
-        pods_project_pod_targets =
-          if cache_analysis_result
-            cache_analysis_result.pod_targets_to_generate - projects_by_pod_targets.values.flatten
-          else
-            pod_targets - projects_by_pod_targets.values.flatten
-          end
+        pods_project_pod_targets = pod_targets_to_generate - projects_by_pod_targets.values.flatten
         all_projects_by_pod_targets = {}
         pods_project_by_targets = { pods_project => pods_project_pod_targets } if pods_project
         all_projects_by_pod_targets.merge(pods_project_by_targets) if pods_project_by_targets
         all_projects_by_pod_targets.merge(projects_by_pod_targets) if projects_by_pod_targets
         all_projects_by_pod_targets.each do |project, pod_targets|
           generator.share_development_pod_schemes(project, development_pod_targets(pod_targets))
-        end
-        if cache_analysis_result
-          update_project_cache(cache_analysis_result, target_installation_results)
         end
       end
     end
