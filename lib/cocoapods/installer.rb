@@ -41,6 +41,7 @@ module Pod
     autoload :UserProjectIntegrator,        'cocoapods/installer/user_project_integrator'
     autoload :Xcode,                        'cocoapods/installer/xcode'
     autoload :SandboxHeaderPathsInstaller,  'cocoapods/installer/sandbox_header_paths_installer'
+    autoload :SandboxDirCleaner,            'cocoapods/installer/sandbox_dir_cleaner'
     autoload :ProjectCacheAnalyzer,       'cocoapods/installer/project_cache/project_cache_analyzer'
     autoload :ProjectInstallationCache,   'cocoapods/installer/project_cache/project_installation_cache'
     autoload :ProjectMetadataCache,       'cocoapods/installer/project_cache/project_metadata_cache'
@@ -218,8 +219,18 @@ module Pod
 
     # Stages the sandbox after analysis.
     #
-    def stage_sandbox(sandbox, pod_targets, aggregate_targets)
-      SandboxHeaderPathsInstaller.new(sandbox, pod_targets).install
+    # @param [Sandbox] sandbox
+    #        The sandbox to stage.
+    #
+    # @param [Array<PodTarget>] pod_targets
+    #        The list of all pod targets.
+    #
+    # @param [Array<AggregateTarget>] aggregate_target
+    #        The list of all aggregate targets.
+    #
+    # @return [void]
+    def stage_sandbox(sandbox, pod_targets)
+      SandboxHeaderPathsInstaller.new(sandbox, pod_targets).install!
     end
 
     #-------------------------------------------------------------------------#
@@ -238,7 +249,15 @@ module Pod
 
     # Generates the Xcode project(s) that go inside the `Pods/` directory.
     #
-    def generate_pods_project(cache_analysis_result=nil)
+    def generate_pods_project
+      stage_sandbox(sandbox, pod_targets)
+      clean_sandbox(pod_targets, aggregate_targets)
+      create_and_save_projects
+      write_lockfiles
+      SandboxDirCleaner.new(sandbox, pod_targets, aggregate_targets).clean!
+    end
+
+    def create_and_save_projects(generator = create_generator(installation_options.generate_multiple_pod_projects))
       UI.section 'Generating Pods project' do
         pod_targets_to_generate = cache_analysis_result ? cache_analysis_result.pod_targets_to_generate : pod_targets
         aggregate_targets_to_generate =
@@ -293,8 +312,6 @@ module Pod
         all_projects_by_pod_targets.each do |project, pod_targets|
           generator.share_development_pod_schemes(project, development_pod_targets(pod_targets))
         end
-
-        write_lockfiles
         if cache_analysis_result
           update_project_cache(cache_analysis_result, target_installation_results)
         end
@@ -394,7 +411,6 @@ module Pod
     #         overwritten.
     #
     def clean_sandbox(pod_targets, aggregate_targets)
-      target_support_dirs = sandbox.target_support_files_root.children.select(&:directory?)
       pod_targets.each do |pod_target|
         pod_target.build_headers.implode_path!(pod_target.headers_sandbox)
         sandbox.public_headers.implode_path!(pod_target.headers_sandbox)
@@ -403,7 +419,6 @@ module Pod
 
       aggregate_targets.each do |aggregate_target|
         FileUtils.rm_rf(aggregate_target.support_files_dir)
-        target_support_dirs.delete(aggregate_target.support_files_dir)
       end
 
       unless sandbox_state.deleted.empty?

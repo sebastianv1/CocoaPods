@@ -74,7 +74,7 @@ module Pod
         root.rmtree if root.exist?
       end
 
-      # Removes the entire root directory.
+      # Removes the directory at the given path relative to the root.
       #
       # @return [void]
       #

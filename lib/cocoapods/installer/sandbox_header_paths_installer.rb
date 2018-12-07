@@ -21,15 +21,15 @@ module Pod
         @sandbox = sandbox
       end
 
-      def install
+      def install!
         # Link all pod target header search paths into the HeaderStore.
         pod_targets.each do |pod_target|
           next if pod_target.build_as_framework? && pod_target.should_build?
 
           pod_target_header_mappings = pod_target.header_mappings_by_file_accessor.values
           public_header_mappings = pod_target.public_header_mappings_by_file_accessor.values
-          added_build_headers = !pod_target_header_mappings.empty?
-          added_public_headers = !public_header_mappings.empty?
+          added_build_headers = !pod_target_header_mappings.all?(&:empty?)
+          added_public_headers = !public_header_mappings.all?(&:empty?)
 
           pod_target.build_headers.add_search_path(pod_target.headers_sandbox, pod_target.platform) if added_build_headers
           sandbox.public_headers.add_search_path(pod_target.headers_sandbox, pod_target.platform) if added_public_headers
