@@ -278,6 +278,8 @@ module Pod
         # all pod targets across projects without needing to open each one.
         @pod_target_subprojects = pod_project_generation_result.projects_by_pod_targets.keys
         @generated_projects = ([pods_project] + pod_target_subprojects || []).reject { |p| p.nil? }
+        @generated_pod_targets = pod_targets_to_generate
+        @generated_aggregate_targets = aggregate_targets_to_generate
         projects_by_pod_targets = pod_project_generation_result.projects_by_pod_targets
         run_podfile_post_install_hooks
 
@@ -336,6 +338,10 @@ module Pod
     attr_reader :metadata_cache
 
     attr_reader :generated_projects
+
+    attr_reader :generated_pod_targets
+
+    attr_reader :generated_aggregate_targets
 
     # @return [Array<Specification>] The specifications that were installed.
     #
