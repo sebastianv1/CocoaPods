@@ -99,6 +99,8 @@ module Pod
           changed_build_settings_cache_key.key_difference(@banana_cache_key).should.equal(:project)
         end
       end
+
+      describe ''
     end
   end
 end

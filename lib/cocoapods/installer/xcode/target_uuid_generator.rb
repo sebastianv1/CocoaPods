@@ -6,7 +6,8 @@ module Pod
         all_objects = projects.flat_map(&:objects)
         all_objects.each do |object|
           @paths_by_object[object] = if object.is_a? Xcodeproj::Project::Object::AbstractTarget
-                                       Digest::MD5.hexdigest(object.name).upcase
+                                       project_basename = object.project.path.basename.to_s
+                                       Digest::MD5.hexdigest(project_basename + object.name).upcase
                                      else
                                        object.uuid
                                      end
