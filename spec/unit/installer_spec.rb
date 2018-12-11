@@ -378,7 +378,7 @@ module Pod
           @pod_targets = [PodTarget.new(config.sandbox, false, {}, [], Platform.ios, [@spec],
                                         [fixture_target_definition], nil)]
           @installer.stubs(:analysis_result).returns(@analysis_result)
-          @installer.stubs(:pod_targets).returns([@pod_targets])
+          @installer.stubs(:pod_targets).returns(@pod_targets)
           @installer.stubs(:aggregate_targets).returns([])
         end
 
@@ -397,10 +397,6 @@ module Pod
           config.sandbox.expects(:clean_pod).with('Deleted-Pod')
           @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
         end
-          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
-          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
-          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
-          @installer.send(:clean_sandbox, @installer.pod_targets, @installer.aggregate_targets)
       end
     end
 

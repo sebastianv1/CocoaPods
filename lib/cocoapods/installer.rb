@@ -721,6 +721,7 @@ module Pod
     end
 
     def update_project_cache(cache_analysis_result, target_installation_results)
+      return unless installation_cache || metadata_cache
       installation_cache.cache_key_by_target_label= cache_analysis_result.cache_key_by_target_label
       installation_cache.project_object_version= cache_analysis_result.project_object_version
       installation_cache.build_configurations= cache_analysis_result.build_configurations

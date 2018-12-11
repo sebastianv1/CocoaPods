@@ -57,7 +57,7 @@ module Pod
       end
 
       def self.from_file(path)
-        return ProjectInstallationCache.new() if !File.exist?(path)
+        return ProjectInstallationCache.new if !File.exist?(path)
         contents = YAMLHelper.load_file(path)
         cache_key_by_target_label = Hash[contents['CACHE_KEYS'].map do |name, key_hash|
           [name, TargetCacheKey.from_cache_hash(key_hash)]
