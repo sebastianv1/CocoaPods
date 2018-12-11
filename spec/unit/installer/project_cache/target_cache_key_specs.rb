@@ -13,7 +13,7 @@ module Pod
         @aggregate_target_cache_key = TargetCacheKey.from_aggregate_target(@aggregate_target)
       end
 
-      describe '#key_difference' do
+      describe 'key_difference with pod targets' do
         it 'should return equality for the same pod targets' do
           @banana_cache_key.key_difference(@banana_cache_key).should.equal(:none)
         end
@@ -100,7 +100,29 @@ module Pod
         end
       end
 
-      describe ''
+      describe 'key_difference with hash objects' do
+        it 'should return equality for same pod target and hash' do
+          hash_cache_key = TargetCacheKey.from_cache_hash(@banana_cache_key.to_h)
+          @banana_cache_key.key_difference(hash_cache_key).should.equal(:none)
+          hash_cache_key.key_difference(@banana_cache_key).should.equal(:none)
+        end
+
+        it 'should return equality for same local pod target and hash' do
+          local_banana_cache_key = TargetCacheKey.from_pod_target(@banana_pod_target, is_local_pod: true)
+          hash_cache_key = TargetCacheKey.from_cache_hash(local_banana_cache_key.to_h)
+          local_banana_cache_key.key_difference(hash_cache_key).should.equal(:none)
+          hash_cache_key.key_difference(local_banana_cache_key).should.equal(:none)
+        end
+
+        it 'should return inequality for modified pod target' do
+          local_banana_cache_key = TargetCacheKey.from_pod_target(@banana_pod_target, is_local_pod: true)
+          cache_hash = local_banana_cache_key.to_h.dup
+          cache_hash['FILES'] = cache_hash['FILES'].dup << 'Blah.h'
+          hash_cache_key = TargetCacheKey.from_cache_hash(cache_hash)
+          local_banana_cache_key.key_difference(hash_cache_key).should.equal(:project)
+          hash_cache_key.key_difference(local_banana_cache_key).should.equal(:project)
+        end
+      end
     end
   end
 end

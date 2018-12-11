@@ -1,19 +1,39 @@
 module Pod
   class Installer
+    # Uniquely identifies a Target.
+    #
     class TargetCacheKey
 
       require 'cocoapods/target/pod_target.rb'
       require 'cocoapods/target/aggregate_target.rb'
       require 'digest'
 
+      # @return [Symbol]
+      #         The type of target. Either aggregate or pod target.
+      #
       attr_reader :type
+
+      # @return [Hash{String => Object}]
+      #         The hash containing key-value pairs that identify the target.
+      #
       attr_reader :hash
 
+      # Initialize a new instance.
+      #
+      # @param [Symbol] type @see #type
+      # @param [Hash{String => Object}] hash @see #hash
+      #
       def initialize(type, hash)
         @type = type
         @hash = hash
       end
 
+      # @return [Symbol] The difference between this and another TargetCacheKey object.
+      # Symbol :none means no difference.
+      #
+      # @param [TargetCacheKey] other
+      #        Other object to compare itself against.
+      #
       def key_difference(other)
         if other.type != type
           :project
@@ -38,10 +58,15 @@ module Pod
         end
       end
 
-      def to_cache_hash
+      def to_h
         hash
       end
 
+      # @return [TargetCacheKey]
+      #
+      # @param [Hash{String => Object}] hash
+      #        The hash used to construct a TargetCacheKey object.
+      #
       def self.from_cache_hash(hash)
         if files = hash['FILES']
           hash['FILES'] = files.sort
@@ -50,6 +75,17 @@ module Pod
         TargetCacheKey.new(type, hash)
       end
 
+      # @return [TargetCacheKey]
+      #
+      # @param [PodTarget] pod_target
+      #        The pod target used to construct a TargetCacheKey object.
+      #
+      # @param [Bool] is_local_pod
+      #        Used to also include its local files in the cache key.
+      #
+      # @param [Hash] checkout_options
+      #        The checkout options for this pod target.
+      #
       def self.from_pod_target(pod_target, is_local_pod: false, checkout_options: nil)
         build_settings = {}
         build_settings["#{pod_target.label}"] = Digest::MD5.hexdigest(pod_target.build_settings.xcconfig.to_s)
@@ -70,6 +106,11 @@ module Pod
         TargetCacheKey.new(:pod_target, contents)
       end
 
+      # @return [TargetCacheKey]
+      #
+      # @param [AggregateTarget] aggregate_target
+      #        The aggregate target used to construct a TargetCacheKey object.
+      #
       def self.from_aggregate_target(aggregate_target)
         build_settings = {}
         aggregate_target.user_build_configurations.keys.each do |configuration|

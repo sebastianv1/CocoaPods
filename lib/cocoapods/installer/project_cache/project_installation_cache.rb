@@ -1,11 +1,32 @@
 module Pod
   class Installer
+    # Represents the cache stored at Pods/.project/installation_cache
+    #
     class ProjectInstallationCache
+
       require 'cocoapods/installer/project_cache/target_cache_key'
+
+      # @return [Hash{String => TargetCacheKey}]
+      #         Stored hash of target cache key objects for every pod target.
+      #
       attr_reader :cache_key_by_target_label
+
+      # @return [Hash{String => Symbol}]
+      #         Build configurations stored in the cache.
+      #
       attr_reader :build_configurations
+
+      # @return [String]
+      #         Project object stored in the cache.
+      #
       attr_reader :project_object_version
 
+      # Initializes a new instance.
+      #
+      # @param [Hash{String => TargetCacheKey}] cache_key_by_target_label @see #cache_key_by_target_label
+      # @param [Hash{String => Symbol}] build_configurations @see #build_configurations
+      # @param [String] project_object_version @see #project_object_version
+      #
       def initialize(cache_key_by_target_label = {}, build_configurations = nil, project_object_version = nil)
         @cache_key_by_target_label = cache_key_by_target_label
         @build_configurations = build_configurations
@@ -27,7 +48,7 @@ module Pod
       def save_as(path)
         Pathname(path).dirname.mkpath
         cache_key_contents = Hash[cache_key_by_target_label.map do |label, key|
-          [label, key.to_cache_hash]
+          [label, key.to_h]
         end]
         contents = { 'CACHE_KEYS' => cache_key_contents }
         contents['BUILD_CONFIGURATIONS'] = build_configurations if build_configurations

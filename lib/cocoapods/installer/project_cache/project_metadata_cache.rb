@@ -1,9 +1,19 @@
 module Pod
   class Installer
+    # Represents the metadata cache
+    #
     class ProjectMetadataCache
       require 'cocoapods/installer/project_cache/target_metadata.rb'
+
+      # @return [Hash{String => TargetMetadata}]
+      #         Hash of string by target metadata.
+      #
       attr_reader :target_label_by_metadata
 
+      # Initialize a new instance.
+      #
+      # @param [Hash{String => TargetMetadata}] target_label_by_metadata @see #target_label_by_metadata
+      #
       def initialize(target_label_by_metadata = {})
         @target_label_by_metadata = target_label_by_metadata
       end
@@ -14,10 +24,24 @@ module Pod
         end]
       end
 
+      # Rewrites the entire cache to the given path.
+      #
+      # @param [String] path
+      #
+      # @return [void]
+      #
       def save_as(path)
         path.open('w') { |f| f.puts YAMLHelper.convert_hash(to_hash, nil)}
       end
 
+      # Updates the metadata cache based on installation results.
+      #
+      # @param [TargetInstallationResult] pod_target_installation_results
+      #        The installation results for pod targets installed.
+      #
+      # @param [TargetInstallationResult] aggregate_target_installation_results
+      #        The installation results for aggregate targets installed.
+      #
       def update_metadata!(pod_target_installation_results, aggregate_target_installation_results)
         installation_results = (pod_target_installation_results.values || []) + (aggregate_target_installation_results.values || [])
         installation_results.each do |installation_result|
@@ -25,6 +49,7 @@ module Pod
           target_label_by_metadata[native_target.name] = TargetMetadata.cache_metadata_from_native_target(native_target)
         end
       end
+
 
       def self.from_file(path)
         return ProjectMetadataCache.new if !File.exist?(path)
