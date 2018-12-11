@@ -160,11 +160,13 @@ module Pod
         ProjectCacheAnalysisResult.new(pod_targets, aggregate_targets, {},
                                        analysis_result.all_user_build_configurations, object_version)
       else
-        @installation_cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
-        @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
+        UI.message 'Analyzing Project Cache' do
+          @installation_cache = ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
+          @metadata_cache = ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
 
-        ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations,
-                                 object_version, pod_targets, aggregate_targets, clean_install: clean_install).analyze
+          ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations,
+                                   object_version, pod_targets, aggregate_targets, clean_install: clean_install).analyze
+        end
       end
     end
 
@@ -264,9 +266,6 @@ module Pod
 
     def create_and_save_projects(pod_targets_to_generate, aggregate_targets_to_generate, build_configurations, project_object_version)
       UI.section 'Generating Pods project' do
-        puts "POD TARGETS: #{pod_targets_to_generate}"
-        puts "AGGREGATE TARGETS: #{aggregate_targets_to_generate}"
-
         generator = create_generator(pod_targets_to_generate, aggregate_targets_to_generate,
                                      build_configurations, project_object_version,
                                      installation_options.generate_multiple_pod_projects)
