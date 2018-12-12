@@ -240,7 +240,8 @@ module Pod
 
     def create_generator(pod_targets_to_generate, aggregate_targets_to_generate, build_configurations, project_object_version, generate_multiple_pod_projects = false)
       if generate_multiple_pod_projects
-        Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate, build_configurations, installation_options, config, project_object_version, metadata_cache)
+        Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate,
+                                             build_configurations, installation_options, config, project_object_version, metadata_cache)
       else
         Xcode::SinglePodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate, build_configurations, installation_options, config, project_object_version)
       end
@@ -252,6 +253,8 @@ module Pod
       stage_sandbox(sandbox, pod_targets)
 
       cache_analysis_result = analyze_project_cache
+      puts "POD TARGETS: #{cache_analysis_result.pod_targets_to_generate}"
+      puts "AGGREGATE TARGERTS: #{cache_analysis_result.aggregate_targets_to_generate}"
       pod_targets_to_generate = cache_analysis_result.pod_targets_to_generate
       aggregate_targets_to_generate = cache_analysis_result.aggregate_targets_to_generate
 

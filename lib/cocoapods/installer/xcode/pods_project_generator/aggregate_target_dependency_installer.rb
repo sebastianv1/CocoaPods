@@ -5,10 +5,12 @@ module Pod
       class AggregateTargetDependencyInstaller
         require 'cocoapods/native_target_ext.rb'
 
+        attr_reader :metadata_cache
         attr_reader :pod_target_installation_results
         attr_reader :aggregate_target_installation_results
 
-        def initialize(aggregate_target_installation_results, pod_target_installation_results)
+        def initialize(metadata_cache, aggregate_target_installation_results, pod_target_installation_results)
+          @metadata_cache = metadata_cache
           @aggregate_target_installation_results = aggregate_target_installation_results
           @pod_target_installation_results = pod_target_installation_results
         end

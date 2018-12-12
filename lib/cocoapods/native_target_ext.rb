@@ -3,7 +3,7 @@ module Xcodeproj
     module Object
       class AbstractTarget
         def add_cached_dependency(metadata)
-          #unless dependency_for_target(target)
+          unless dependency_for_cached_target(metadata)
             container_proxy = project.new(Xcodeproj::Project::PBXContainerItemProxy)
 
             subproject_reference = project.reference_for_path(metadata.container_project_path)
@@ -19,7 +19,26 @@ module Xcodeproj
             dependency.target_proxy = container_proxy
 
             dependencies << dependency
-          #end
+          end
+        end
+
+        # Checks whether this target has a dependency on the given target.
+        #
+        # @param  [TargetMetadata] cached_target
+        #         the target to search for.
+        #
+        # @return [PBXTargetDependency]
+        #
+        def dependency_for_cached_target(cached_target)
+          dependencies.find do |dep|
+            if dep.target_proxy.remote?
+              subproject_reference = project.reference_for_path(cached_target.container_project_path)
+              uuid = subproject_reference.uuid if subproject_reference
+              dep.target_proxy.remote_global_id_string == cached_target.native_target_uuid && dep.target_proxy.container_portal == uuid
+            else
+              dep.target.uuid == cached_target.native_target_uuid
+            end
+          end
         end
       end
     end

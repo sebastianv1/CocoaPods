@@ -84,7 +84,7 @@ module Pod
                     test_native_target.add_dependency(test_resource_bundle_target)
                   end
                 end
-                dependent_test_project = pod_target_installation_results[test_dependent_target.name].native_target.project
+                dependent_test_project = dependency_installation_result.native_target.project
                 if dependent_test_project != project
                   project.add_subproject_reference(dependent_test_project, project.dependencies_group)
                 end
