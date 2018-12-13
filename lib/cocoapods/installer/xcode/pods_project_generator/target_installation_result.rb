@@ -89,9 +89,7 @@ module Pod
           #         an array of all the test specs associated with this native target.
           #
           def test_specs_by_native_target
-            test_specs_by_native_target = target.test_specs.group_by do |test_spec|
-              test_native_target_from_spec(test_spec)
-            end
+            test_specs_by_native_target = Hash[target.test_specs.map { |spec| [test_native_target_from_spec(spec), spec] }]
             test_specs_by_native_target.delete_if { |k, _| k.nil? }
           end
 
@@ -99,9 +97,7 @@ module Pod
           #         an array of all the app specs associated with this native target.
           #
           def app_specs_by_native_target
-            app_specs_by_native_target = target.app_specs.group_by do |app_spec|
-              app_native_target_from_spec(app_spec)
-            end
+            app_specs_by_native_target = Hash[target.app_specs.map { |spec| [app_native_target_from_spec(spec), spec] }]
             app_specs_by_native_target.delete_if { |k, _| k.nil? }
           end
 

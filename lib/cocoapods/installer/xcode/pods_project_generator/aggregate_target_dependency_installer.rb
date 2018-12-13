@@ -1,18 +1,34 @@
 module Pod
   class Installer
     class Xcode
-
+      # Wires up the dependencies for aggregate targets from the target installation results
+      #
       class AggregateTargetDependencyInstaller
+
         require 'cocoapods/native_target_ext.rb'
 
-        attr_reader :metadata_cache
+        # @return [TargetInstallationResult] The target installation results for pod targets.
+        #
         attr_reader :pod_target_installation_results
+
+        # @return [TargetInstallationResult] The target installation results for aggregate targets.
+        #
         attr_reader :aggregate_target_installation_results
 
-        def initialize(metadata_cache, aggregate_target_installation_results, pod_target_installation_results)
-          @metadata_cache = metadata_cache
+        # @return [ProjectMetadataCache] The project metadata cache.
+        #
+        attr_reader :metadata_cache
+
+        # Initialize a new instance.
+        #
+        # @param [TargetInstallationResult] aggregate_target_installation_results @see #aggregate_target_installation_results
+        # @param [TargetInstallationResult] pod_target_installation_results @see #pod_target_installation_results
+        # @param [ProjectMetadataCache] metadata_cache @see #metadata_cache
+        #
+        def initialize(aggregate_target_installation_results, pod_target_installation_results, metadata_cache)
           @aggregate_target_installation_results = aggregate_target_installation_results
           @pod_target_installation_results = pod_target_installation_results
+          @metadata_cache = metadata_cache
         end
 
         def install!

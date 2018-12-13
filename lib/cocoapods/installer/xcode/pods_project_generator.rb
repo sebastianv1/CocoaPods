@@ -182,8 +182,8 @@ module Pod
           pod_target_installation_results_hash = target_installation_results.pod_target_installation_results || {}
           aggregate_target_installation_results_hash = target_installation_results.aggregate_target_installation_results || {}
 
-          AggregateTargetDependencyInstaller.new(metadata_cache, aggregate_target_installation_results_hash,
-                                                 pod_target_installation_results_hash).install!
+          AggregateTargetDependencyInstaller.new(aggregate_target_installation_results_hash,
+                                                 pod_target_installation_results_hash, metadata_cache).install!
 
           PodTargetDependencyInstaller.new(pod_target_installation_results_hash, metadata_cache).install!
         end
