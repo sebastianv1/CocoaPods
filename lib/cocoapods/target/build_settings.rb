@@ -226,7 +226,7 @@ module Pod
 
       # @return [Array<String>]
       define_build_settings_method :framework_search_paths, :build_setting => true, :memoized => true do
-        framework_search_paths_to_import_developer_frameworks(frameworks)
+        framework_search_paths_to_import_developer_frameworks(frameworks + weak_frameworks)
       end
 
       # @param [Array<String>] frameworks
@@ -629,9 +629,9 @@ module Pod
           libraries = []
           if non_library_xcconfig? || target.build_as_dynamic?
             libraries.concat vendored_static_frameworks.map { |l| File.basename(l, '.framework') }
+            libraries.concat libraries_to_import
           end
           if non_library_xcconfig?
-            libraries.concat libraries_to_import
             libraries.concat dependent_targets.flat_map { |pt| pt.build_settings.dynamic_libraries_to_import }
             libraries.concat dependent_targets.flat_map { |pt| pt.build_settings.static_libraries_to_import }
           end

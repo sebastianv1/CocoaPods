@@ -30,16 +30,19 @@ module Pod
   # source control.
   #
   class Installer
-    autoload :Analyzer,                   'cocoapods/installer/analyzer'
-    autoload :InstallationOptions,        'cocoapods/installer/installation_options'
-    autoload :PostInstallHooksContext,    'cocoapods/installer/post_install_hooks_context'
-    autoload :PreInstallHooksContext,     'cocoapods/installer/pre_install_hooks_context'
-    autoload :SourceProviderHooksContext, 'cocoapods/installer/source_provider_hooks_context'
-    autoload :PodfileValidator,           'cocoapods/installer/podfile_validator'
-    autoload :PodSourceInstaller,         'cocoapods/installer/pod_source_installer'
-    autoload :PodSourcePreparer,          'cocoapods/installer/pod_source_preparer'
-    autoload :UserProjectIntegrator,      'cocoapods/installer/user_project_integrator'
-    autoload :Xcode,                      'cocoapods/installer/xcode'
+    autoload :Analyzer,                     'cocoapods/installer/analyzer'
+    autoload :InstallationOptions,          'cocoapods/installer/installation_options'
+    autoload :PostInstallHooksContext,      'cocoapods/installer/post_install_hooks_context'
+    autoload :PreInstallHooksContext,       'cocoapods/installer/pre_install_hooks_context'
+    autoload :SourceProviderHooksContext,   'cocoapods/installer/source_provider_hooks_context'
+    autoload :PodfileValidator,             'cocoapods/installer/podfile_validator'
+    autoload :PodSourceInstaller,           'cocoapods/installer/pod_source_installer'
+    autoload :PodSourcePreparer,            'cocoapods/installer/pod_source_preparer'
+    autoload :UserProjectIntegrator,        'cocoapods/installer/user_project_integrator'
+    autoload :Xcode,                        'cocoapods/installer/xcode'
+    autoload :SandboxHeaderPathsInstaller,  'cocoapods/installer/sandbox_header_paths_installer'
+    autoload :SandboxDirCleaner,            'cocoapods/installer/sandbox_dir_cleaner'
+    autoload :ProjectCache,                 'cocoapods/installer/project_cache/project_cache'
 
     include Config::Mixin
 
@@ -102,6 +105,12 @@ module Pod
     attr_accessor :deployment
     alias_method :deployment?, :deployment
 
+    # @return [Boolean] Whether installation should ignore the contents of the project cache
+    # when incremental installation is enabled.
+    #
+    attr_accessor :clean_install
+    alias_method :clean_install?, :clean_install
+
     #-------------------------------------------------------------------------#
 
     private
@@ -110,6 +119,18 @@ module Pod
     #         while installing pod targets
     #
     attr_reader :pod_installers
+
+    # @return [ProjectInstallationCache] The installation cache stored in Pods/.project_cache/installation_cache
+    #
+    attr_reader :installation_cache
+
+    # @return [ProjectMetadataCache] The metadata cache stored in Pods/.project_cache/metadata_cache
+    #
+    attr_reader :metadata_cache
+
+    # @return [ProjectCacheVersion] The version of the project cache stored in Pods/.project_cache/version
+    #
+    attr_reader :project_cache_version
 
     #-------------------------------------------------------------------------#
 
@@ -143,6 +164,33 @@ module Pod
       perform_post_install_actions
     end
 
+    def analyze_project_cache
+      user_projects = aggregate_targets.map(&:user_project).compact
+      object_version = user_projects.min_by { |p| p.object_version.to_i }.object_version.to_i unless user_projects.empty?
+
+      if !installation_options.incremental_installation
+        # Run entire installation.
+        ProjectCache::ProjectCacheAnalysisResult.new(pod_targets, aggregate_targets, {},
+                                                     analysis_result.all_user_build_configurations, object_version)
+      else
+        UI.message 'Analyzing Project Cache' do
+          @installation_cache = ProjectCache::ProjectInstallationCache.from_file(sandbox.project_installation_cache_path)
+          @metadata_cache = ProjectCache::ProjectMetadataCache.from_file(sandbox.project_metadata_cache_path)
+          @project_cache_version = ProjectCache::ProjectCacheVersion.from_file(sandbox.project_version_cache_path)
+
+          force_clean_install = clean_install || project_cache_version.version != Version.create(VersionMetadata.gem_version)
+          cache_result = ProjectCache::ProjectCacheAnalyzer.new(sandbox, installation_cache, analysis_result.all_user_build_configurations,
+                                                                object_version, pod_targets, aggregate_targets, :clean_install => force_clean_install).analyze
+          aggregate_targets_to_generate = cache_result.aggregate_targets_to_generate || []
+          pod_targets_to_generate = cache_result.pod_targets_to_generate
+          (aggregate_targets_to_generate + pod_targets_to_generate).each do |target|
+            UI.message "- Regenerating #{target.label}"
+          end
+          cache_result
+        end
+      end
+    end
+
     def prepare
       # Raise if pwd is inside Pods
       if Dir.pwd.start_with?(sandbox.root.to_path)
@@ -171,7 +219,6 @@ module Pod
       UI.section 'Analyzing dependencies' do
         analyze(analyzer)
         validate_build_configurations
-        clean_sandbox
       end
 
       UI.section 'Verifying no changes' do
@@ -190,45 +237,83 @@ module Pod
       end
     end
 
+    # Stages the sandbox after analysis.
+    #
+    # @param [Sandbox] sandbox
+    #        The sandbox to stage.
+    #
+    # @param [Array<PodTarget>] pod_targets
+    #        The list of all pod targets.
+    #
+    # @return [void]
+    #
+    def stage_sandbox(sandbox, pod_targets)
+      SandboxHeaderPathsInstaller.new(sandbox, pod_targets).install!
+    end
+
     #-------------------------------------------------------------------------#
 
     # @!group Pods Project Generation
 
     private
 
-    def create_generator(generate_multiple_pod_projects = false)
+    def create_generator(pod_targets_to_generate, aggregate_targets_to_generate, build_configurations, project_object_version, generate_multiple_pod_projects = false)
       if generate_multiple_pod_projects
-        Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets, pod_targets, analysis_result, installation_options, config)
+        Xcode::MultiPodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate,
+                                             build_configurations, installation_options, config, project_object_version, metadata_cache)
       else
-        Xcode::SinglePodsProjectGenerator.new(sandbox, aggregate_targets, pod_targets, analysis_result, installation_options, config)
+        Xcode::SinglePodsProjectGenerator.new(sandbox, aggregate_targets_to_generate, pod_targets_to_generate, build_configurations, installation_options, config, project_object_version)
       end
     end
 
     # Generates the Xcode project(s) that go inside the `Pods/` directory.
     #
-    def generate_pods_project(generator = create_generator(installation_options.generate_multiple_pod_projects))
+    def generate_pods_project
+      stage_sandbox(sandbox, pod_targets)
+
+      cache_analysis_result = analyze_project_cache
+      pod_targets_to_generate = cache_analysis_result.pod_targets_to_generate
+      aggregate_targets_to_generate = cache_analysis_result.aggregate_targets_to_generate
+
+      clean_sandbox(pod_targets_to_generate)
+
+      create_and_save_projects(pod_targets_to_generate, aggregate_targets_to_generate,
+                               cache_analysis_result.build_configurations, cache_analysis_result.project_object_version)
+      update_project_cache(cache_analysis_result, target_installation_results)
+      write_lockfiles
+      SandboxDirCleaner.new(sandbox, pod_targets, aggregate_targets).clean!
+    end
+
+    def create_and_save_projects(pod_targets_to_generate, aggregate_targets_to_generate, build_configurations, project_object_version)
       UI.section 'Generating Pods project' do
+        generator = create_generator(pod_targets_to_generate, aggregate_targets_to_generate,
+                                     build_configurations, project_object_version,
+                                     installation_options.generate_multiple_pod_projects)
+
         pod_project_generation_result = generator.generate!
         @target_installation_results = pod_project_generation_result.target_installation_results
         @pods_project = pod_project_generation_result.project
         # The `pod_target_subprojects` is used for backwards compatibility so that consumers can iterate over
         # all pod targets across projects without needing to open each one.
         @pod_target_subprojects = pod_project_generation_result.projects_by_pod_targets.keys
+        @generated_projects = ([pods_project] + pod_target_subprojects || []).compact
+        @generated_pod_targets = pod_targets_to_generate
+        @generated_aggregate_targets = aggregate_targets_to_generate || []
         projects_by_pod_targets = pod_project_generation_result.projects_by_pod_targets
         run_podfile_post_install_hooks
 
-        generated_projects = [pods_project] + pod_target_subprojects
         projects_writer = Xcode::PodsProjectWriter.new(sandbox, generated_projects,
                                                        target_installation_results.pod_target_installation_results, installation_options)
         projects_writer.write!
 
-        pods_project_pod_targets = pod_targets - projects_by_pod_targets.values.flatten
-        all_projects_by_pod_targets = { pods_project => pods_project_pod_targets }.merge(projects_by_pod_targets)
+        pods_project_pod_targets = pod_targets_to_generate - projects_by_pod_targets.values.flatten
+        all_projects_by_pod_targets = {}
+        pods_project_by_targets = { pods_project => pods_project_pod_targets } if pods_project
+        all_projects_by_pod_targets.merge(pods_project_by_targets) if pods_project_by_targets
+        all_projects_by_pod_targets.merge(projects_by_pod_targets) if projects_by_pod_targets
         all_projects_by_pod_targets.each do |project, pod_targets|
           generator.share_development_pod_schemes(project, development_pod_targets(pod_targets))
         end
-
-        write_lockfiles
       end
     end
 
@@ -266,6 +351,18 @@ module Pod
     #         generated as result of the analyzer.
     #
     attr_reader :pod_targets
+
+    # @return [Array<Project>] The list of projects generated from the installation.
+    #
+    attr_reader :generated_projects
+
+    # @return [Array<PodTarget>] The list of pod targets that were generated from the installation.
+    #
+    attr_reader :generated_pod_targets
+
+    # @return [Array<AggregateTarget>] The list of aggregate targets that were generated from the installation.
+    #
+    attr_reader :generated_aggregate_targets
 
     # @return [Array<Specification>] The specifications that were installed.
     #
@@ -314,25 +411,14 @@ module Pod
       end
     end
 
-    # @return [void] In this step we clean all the folders that will be
-    #         regenerated from scratch and any file which might not be
-    #         overwritten.
+    # @return [void] In this step we clean all the header folders for pod targets that will be
+    #         regenerated from scratch and cleanup any pods that have been removed.
     #
-    # @todo   [#247] Clean the headers of only the pods to install.
-    #
-    def clean_sandbox
-      sandbox.public_headers.implode!
-      target_support_dirs = sandbox.target_support_files_root.children.select(&:directory?)
+    def clean_sandbox(pod_targets)
       pod_targets.each do |pod_target|
-        pod_target.build_headers.implode!
-        target_support_dirs.delete(pod_target.support_files_dir)
+        pod_target.build_headers.implode_path!(pod_target.headers_sandbox)
+        sandbox.public_headers.implode_path!(pod_target.headers_sandbox)
       end
-
-      aggregate_targets.each do |aggregate_target|
-        target_support_dirs.delete(aggregate_target.support_files_dir)
-      end
-
-      target_support_dirs.each { |dir| FileUtils.rm_rf(dir) }
 
       unless sandbox_state.deleted.empty?
         title_options = { :verbose_prefix => '-> '.red }
@@ -650,6 +736,21 @@ module Pod
       end
     end
 
+    def update_project_cache(cache_analysis_result, target_installation_results)
+      return unless installation_cache || metadata_cache
+      installation_cache.update_cache_key_by_target_label!(cache_analysis_result.cache_key_by_target_label)
+      installation_cache.update_project_object_version!(cache_analysis_result.project_object_version)
+      installation_cache.update_build_configurations!(cache_analysis_result.build_configurations)
+      installation_cache.save_as(sandbox.project_installation_cache_path)
+
+      metadata_cache.update_metadata!(target_installation_results.pod_target_installation_results || {},
+                                      target_installation_results.aggregate_target_installation_results || {})
+      metadata_cache.save_as(sandbox.project_metadata_cache_path)
+
+      cache_version = ProjectCache::ProjectCacheVersion.new(VersionMetadata.gem_version)
+      cache_version.save_as(sandbox.project_version_cache_path)
+    end
+
     # Integrates the user projects adding the dependencies on the CocoaPods
     # libraries, setting them up to use the xcconfigs and performing other
     # actions. This step is also responsible of creating the workspace if
@@ -660,7 +761,7 @@ module Pod
     def integrate_user_project
       UI.section "Integrating client #{'project'.pluralize(aggregate_targets.map(&:user_project_path).uniq.count)}" do
         installation_root = config.installation_root
-        integrator = UserProjectIntegrator.new(podfile, sandbox, installation_root, aggregate_targets, :use_input_output_paths => !installation_options.disable_input_output_paths?)
+        integrator = UserProjectIntegrator.new(podfile, sandbox, installation_root, generated_aggregate_targets, :use_input_output_paths => !installation_options.disable_input_output_paths?)
         integrator.integrate!
       end
     end

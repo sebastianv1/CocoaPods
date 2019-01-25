@@ -58,6 +58,14 @@ module Pod
     #
     attr_accessor :app_dependent_targets_by_spec_name
 
+    # @return [Hash{String => BuildSettings}] the test spec build settings for this target.
+    #
+    attr_reader :test_spec_build_settings
+
+    # @return [Hash{String => BuildSettings}] the app spec build settings for this target.
+    #
+    attr_reader :app_spec_build_settings
+
     # Initialize a new instance
     #
     # @param [Sandbox] sandbox @see Target#sandbox
@@ -92,6 +100,8 @@ module Pod
       @test_dependent_targets_by_spec_name = {}
       @app_dependent_targets_by_spec_name = {}
       @build_config_cache = {}
+      @test_spec_build_settings = create_test_build_settings
+      @app_spec_build_settings = create_app_build_settings
     end
 
     # Scopes the current target based on the existing pod targets within the cache.
@@ -129,6 +139,40 @@ module Pod
       else
         "#{root_spec.name}-#{scope_suffix}"
       end
+    end
+
+    # @return [Array<FileAccessor>] The list of all files tracked.
+    #
+    def all_files
+      Sandbox::FileAccessor.all_files(file_accessors)
+    end
+
+    # @return [Pathname] the pathname for headers in the sandbox.
+    #
+    def headers_sandbox
+      Pathname.new(pod_name)
+    end
+
+    # @return [Hash{FileAccessor => Hash}] Hash of file accessors by header mappings.
+    #
+    def header_mappings_by_file_accessor
+      valid_accessors = file_accessors.reject { |fa| fa.spec.non_library_specification? }
+      Hash[valid_accessors.map do |file_accessor|
+        # Private headers will always end up in Pods/Headers/Private/PodA/*.h
+        # This will allow for `""` imports to work.
+        [file_accessor, header_mappings(file_accessor, file_accessor.headers)]
+      end]
+    end
+
+    # @return [Hash{FileAccessor => Hash}] Hash of file accessors by public header mappings.
+    #
+    def public_header_mappings_by_file_accessor
+      valid_accessors = file_accessors.reject { |fa| fa.spec.non_library_specification? }
+      Hash[valid_accessors.map do |file_accessor|
+        # Public headers on the other hand will be added in Pods/Headers/Public/PodA/PodA/*.h
+        # The extra folder is intentional in order for `<>` imports to work.
+        [file_accessor, header_mappings(file_accessor, file_accessor.public_headers)]
+      end]
     end
 
     # @return [String] the Swift version for the target. If the pod author has provided a set of Swift versions
@@ -609,7 +653,7 @@ module Pod
         whitelists.first
       else
         UI.warn "The pod `#{pod_name}` is linked to different targets " \
-          "(#{target_definitions.map(&:label)}), which contain different " \
+          "(#{target_definitions.map { |td| "`#{td.label}`" }.to_sentence}), which contain different " \
           'settings to inhibit warnings. CocoaPods does not currently ' \
           'support different settings and will fall back to your preference ' \
           'set in the root target definition.'
@@ -696,6 +740,52 @@ module Pod
 
     def create_build_settings
       BuildSettings::PodTargetSettings.new(self)
+    end
+
+    def create_test_build_settings
+      Hash[test_specs.map do |test_spec|
+        [test_spec.name, BuildSettings::PodTargetSettings.new(self, test_spec)]
+      end]
+    end
+
+    def create_app_build_settings
+      Hash[app_specs.map do |app_spec|
+        [app_spec.name, BuildSettings::PodTargetSettings.new(self, app_spec)]
+      end]
+    end
+
+    # Computes the destination sub-directory in the sandbox
+    #
+    # @param  [Sandbox::FileAccessor] file_accessor
+    #         The consumer file accessor for which the headers need to be
+    #         linked.
+    #
+    # @param  [Array<Pathname>] headers
+    #         The absolute paths of the headers which need to be mapped.
+    #
+    # @return [Hash{Pathname => Array<Pathname>}] A hash containing the
+    #         headers folders as the keys and the absolute paths of the
+    #         header files as the values.
+    #
+    def header_mappings(file_accessor, headers)
+      consumer = file_accessor.spec_consumer
+      header_mappings_dir = consumer.header_mappings_dir
+      dir = headers_sandbox
+      dir += consumer.header_dir if consumer.header_dir
+
+      mappings = {}
+      headers.each do |header|
+        next if header.to_s.include?('.framework/')
+
+        sub_dir = dir
+        if header_mappings_dir
+          relative_path = header.relative_path_from(file_accessor.path_list.root + header_mappings_dir)
+          sub_dir += relative_path.dirname
+        end
+        mappings[sub_dir] ||= []
+        mappings[sub_dir] << header
+      end
+      mappings
     end
   end
 end

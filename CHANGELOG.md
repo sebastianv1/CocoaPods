@@ -8,6 +8,22 @@ To install release candidates run `[sudo] gem install cocoapods --pre`
 
 ##### Enhancements
 
+* Set the path of development pod groups to the top-most shared directory  
+  [Eric Amorde](https://github.com/amorde)
+  [#8445](https://github.com/CocoaPods/CocoaPods/pull/8445)
+
+* Incremental Pod Installation
+  Enables only regenerating projects for pod targets that have changed since the previous installation. 
+  This feature is gated by the `incremental_installation` option.  
+  [Sebastian Shanus](https://github.com/sebastianv1)
+  [#8319](https://github.com/CocoaPods/CocoaPods/issues/8319)
+
+* Podfile: Add a CDNSource automatically if it's not present, just like git source.  
+  Convenience for CDNSource when specified as `source 'https://cdn.jsdelivr.net/cocoa/'`.  
+  If source doesn't exist, it will be created.  
+  [igor-makarov](https://github.com/igor-makarov)
+  [#8362](https://github.com/CocoaPods/CocoaPods/pull/8362)
+
 * Scheme configuration support.  
   [Dimitris Koutsogiorgas](https://github.com/dnkoutso)
   [#7577](https://github.com/CocoaPods/CocoaPods/issues/7577)
@@ -19,6 +35,10 @@ To install release candidates run `[sudo] gem install cocoapods --pre`
 * Generate Info.plist files for static frameworks  
   [Paul Beusterien](https://github.com/paulb777)
   [#8287](https://github.com/CocoaPods/CocoaPods/issues/8287)
+
+* Add CDN repo Source to allow retrieving specs from a web URL.  
+  [igor-makarov](https://github.com/igor-makarov)
+  [#8268](https://github.com/CocoaPods/CocoaPods/issues/8268) (partial beta solution)
 
 * Multi Pod Project Generation Support.  
   Support for splitting the pods project into a subproject per pod target, gated by the `generate_multiple_pod_projects` installation option.  
@@ -44,6 +64,18 @@ To install release candidates run `[sudo] gem install cocoapods --pre`
 
 ##### Bug Fixes
 
+* Always update sources specified with the `:source` option when `--repo-update` is specified  
+  [Eric Amorde](https://github.com/amorde)
+  [#8421](https://github.com/CocoaPods/CocoaPods/issues/8421) 
+
+* Set `showEnvVarsInLog` for script phases only when its disabled.  
+  [Dimitris Koutsogiorgas](https://github.com/dnkoutso)
+  [#8400](https://github.com/CocoaPods/CocoaPods/pull/8400)
+
+* Fix error when execute pod list --update --verbose command  
+  [tripleCC](https://github.com/tripleCC)
+  [#8404](https://github.com/CocoaPods/CocoaPods/pull/8404)
+
 * Do not force 64-bit architectures on Xcode 10  
   [Eric Amorde](https://github.com/amorde)
   [#8242](https://github.com/CocoaPods/CocoaPods/issues/8242)
@@ -68,6 +100,11 @@ To install release candidates run `[sudo] gem install cocoapods --pre`
 * Fix HTTPs -> HTTPS in warning message  
   [CydeWeys](https://github.com/CydeWeys)
   [#8354](https://github.com/CocoaPods/CocoaPods/issues/8354)
+
+* Add the `FRAMEWORK_SEARCH_PATHS` necessary to import `XCTest` when it is
+  linked as a weak framework.  
+  [Samuel Giddins](https://github.com/segiddins)
+
 
 ## 1.6.0.beta.2 (2018-10-17)
 
@@ -121,7 +158,9 @@ To install release candidates run `[sudo] gem install cocoapods --pre`
   the user Xcode project and reduce the chance of hitting `ARG_MAX`.  
   [Samuel Giddins](https://github.com/segiddins)
   [#8037](https://github.com/CocoaPods/CocoaPods/issues/8037)
-
+  [Dimitris Koutsogiorgas](https://github.com/dnkoutso)
+  [#8414](https://github.com/CocoaPods/CocoaPods/pull/8414)
+  
 ##### Bug Fixes
 
 * Don't generate unencrypted source warnings for localhost.  
