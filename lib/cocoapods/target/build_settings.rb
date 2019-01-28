@@ -31,6 +31,7 @@ module Pod
         SECTORDER_FLAGS
         SWIFT_ACTIVE_COMPILATION_CONDITIONS
         SWIFT_INCLUDE_PATHS
+        USER_HEADER_SEARCH_PATHS
         WARNING_CFLAGS
         WARNING_LDFLAGS
       ).to_set.freeze
@@ -742,7 +743,7 @@ module Pod
         def other_swift_flags_without_swift?
           return false if library_xcconfig?
 
-          target.uses_swift_for_non_library_spec?(non_library_spec)
+          target.uses_swift_for_spec?(non_library_spec)
         end
 
         # @return [Array<String>]
