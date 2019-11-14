@@ -35,6 +35,10 @@ To install release candidates run `[sudo] gem install cocoapods --pre`
 
 ##### Bug Fixes
 
+* Only stabilize target UUIDs if incremental installation is enabled.  
+  [Sebastian Shanus](https://github.com/sebastianv1/)
+  [Xcodeproj #681](https://github.com/CocoaPods/Xcodeproj/issues/681)
+
 * Fix issue where workspace was missing user project references during incremental installation.  
   [Sebastian Shanus](https://github.com/sebastianv1)
   [#9237](https://github.com/CocoaPods/CocoaPods/issues/9237)
